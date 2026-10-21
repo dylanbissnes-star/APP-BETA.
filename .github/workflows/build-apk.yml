@@ -9,6 +9,8 @@ on:
 jobs:
   build:
     runs-on: ubuntu-latest
+    permissions:
+      contents: write   # necesario para crear el Release
     steps:
       - uses: actions/checkout@v4
 
@@ -25,8 +27,25 @@ jobs:
       - name: Compilar APK debug
         run: gradle assembleDebug --stacktrace
 
+      - name: Renombrar APK
+        run: cp app/build/outputs/apk/debug/app-debug.apk GlassPlayer.apk
+
+      # Tambien queda como artifact en la pestana Actions
       - uses: actions/upload-artifact@v4
         with:
           name: GlassPlayer-debug-apk
-          path: app/build/outputs/apk/debug/*.apk
+          path: GlassPlayer.apk
           if-no-files-found: error
+
+      # Solo en main: publica un Release con el APK adjunto
+      - name: Publicar Release
+        if: github.ref == 'refs/heads/main' && github.event_name != 'pull_request'
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: v1.0.${{ github.run_number }}
+          name: GlassPlayer v1.0.${{ github.run_number }}
+          body: |
+            APK de depuracion generado automaticamente desde `main`.
+            Commit: ${{ github.sha }}
+          files: GlassPlayer.apk
+          make_latest: true
