@@ -56,3 +56,29 @@ fun Modifier.glass(
             )
         )
     }
+
+/**
+ * Vidrio NEGRO para botones flotantes: relleno casi negro y borde con degradado
+ * (brillante en las esquinas opuestas, apagado en medio).
+ */
+fun Modifier.blackGlass(shape: Shape): Modifier = this
+    .clip(shape)
+    .background(
+        Brush.verticalGradient(
+            listOf(Color(0xEE1A1A21), Color(0xF2050507))
+        )
+    )
+    .border(
+        width = 1.5.dp,
+        brush = Brush.linearGradient(
+            colors = listOf(
+                Color.White.copy(alpha = 0.95f),
+                Color.White.copy(alpha = 0.05f),
+                Color.White.copy(alpha = 0.55f),
+                Color.White.copy(alpha = 0.10f),
+            ),
+            start = Offset.Zero,
+            end = Offset.Infinite,
+        ),
+        shape = shape,
+    )
