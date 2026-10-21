@@ -7,8 +7,17 @@ Kotlin + Jetpack Compose + Media3 (ExoPlayer).
 
 - **Fondo aurora** animado que toma los colores de la portada actual (Palette).
 - **Carrusel 3D** de portadas en tarjetas de vidrio (Pager + `graphicsLayer`).
-- **Barra cápsula de vidrio**: anterior / play-pausa / siguiente, mini tarjeta con
-  progreso (toca para saltar), aleatorio y repetir.
+- **Botones flotantes de vidrio negro** con borde degradado (`Modifier.blackGlass`).
+- **Controles**: cápsula de vidrio con la canción actual y barra de progreso (toca o arrastra),
+  y debajo aleatorio / anterior / play-pausa / siguiente / repetir.
+- **Biblioteca** (botón arriba a la izquierda): listado completo con filtros por origen.
+  Toca una canción para reproducirla; **desliza a la izquierda** para añadirla a la cola.
+- **Carpetas**: en la biblioteca, botón «agregar carpeta» (selector del sistema). Se recorren las
+  subcarpetas, se leen título/artista/portada de cada archivo y se recuerdan al reiniciar.
+  Selecciona una carpeta (chip) para ver solo sus canciones; el ✕ del chip la quita.
+- **Cola de reproducción** (botón arriba a la derecha, con contador): «Reproduciendo ahora»,
+  «En cola» (lo que añadiste, suena primero) y «A continuación». Toca para saltar, ✕ para quitar,
+  «Vaciar cola» para limpiar lo añadido.
 - **Reproducción en segundo plano** con notificación y controles en pantalla de bloqueo
   (`MediaSessionService`).
 - Lee la **música local** del teléfono (MediaStore). Si no hay, carga 4 pistas de prueba
@@ -29,17 +38,30 @@ Kotlin + Jetpack Compose + Media3 (ExoPlayer).
 app/src/main/java/com/example/glassplayer/
 ├── MainActivity.kt          Permisos + arranque
 ├── PlaybackService.kt       ExoPlayer + MediaSession (segundo plano)
-├── PlayerViewModel.kt       Estado y acciones del reproductor
+├── PlayerViewModel.kt       Estado, biblioteca, carpetas y cola
 ├── data/Track.kt            Modelo + lectura de MediaStore + pistas demo
+├── data/FolderStore.kt      Carpetas elegidas (permiso persistente)
+├── data/FolderScanner.kt    Recorre una carpeta y lee metadatos
 └── ui/
-    ├── PlayerScreen.kt      Pantalla principal
+    ├── PlayerScreen.kt      Pantalla principal y navegación
+    ├── LibraryScreen.kt     Biblioteca + carpetas + deslizar a la cola
+    ├── QueueScreen.kt       Cola de reproducción
     ├── theme/Theme.kt
     └── components/
-        ├── Glass.kt             Modifier.glass(): el efecto vidrio
+        ├── Glass.kt             Modifier.glass() y Modifier.blackGlass()
+        ├── BlackGlassButton.kt  Botones flotantes negros
+        ├── TrackRow.kt          Fila de canción y miniatura
         ├── AuroraBackground.kt  Fondo + extracción de colores
         ├── CoverCarousel.kt     Carrusel 3D
         └── GlassControlBar.kt   Cápsula de controles
 ```
+
+## Notas sobre la cola
+
+- La cola real es la lista del propio reproductor: «añadir a la cola» inserta la canción justo
+  después de la actual. Con **aleatorio** activado el orden de reproducción puede variar.
+- Tocar una canción en la biblioteca reemplaza la lista por la del filtro actual, pero conserva
+  lo que ya tenías en cola.
 
 ## Personalizar el vidrio
 
@@ -53,7 +75,7 @@ Para blur real puedes añadir la librería **Haze** (`dev.chrisbanes.haze`) y ap
 
 ## Próximos pasos sugeridos
 
-- Pantalla de lista/búsqueda de canciones y playlists (Room).
+- Búsqueda de canciones y playlists guardadas (Room).
 - Pantalla "Reproduciendo" a pantalla completa con letra.
 - Ecualizador (`android.media.audiofx.Equalizer`) y control de volumen.
 - Cola persistente al cerrar la app.

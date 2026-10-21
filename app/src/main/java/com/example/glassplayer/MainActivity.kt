@@ -23,7 +23,7 @@ class MainActivity : ComponentActivity() {
 
     private val requestPermissions =
         registerForActivityResult(ActivityResultContracts.RequestMultiplePermissions()) { result ->
-            viewModel.loadTracks(result[audioPermission] == true || hasAudioPermission())
+            viewModel.loadLibrary(result[audioPermission] == true || hasAudioPermission())
         }
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -36,7 +36,7 @@ class MainActivity : ComponentActivity() {
 
         if (savedInstanceState == null) {
             if (hasAudioPermission()) {
-                viewModel.loadTracks(true)
+                viewModel.loadLibrary(true)
             } else {
                 val perms = mutableListOf(audioPermission)
                 if (Build.VERSION.SDK_INT >= 33) perms += Manifest.permission.POST_NOTIFICATIONS

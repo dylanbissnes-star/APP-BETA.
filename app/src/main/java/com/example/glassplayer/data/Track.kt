@@ -10,6 +10,10 @@ import androidx.media3.common.MediaMetadata
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 
+const val SOURCE_ALL = "all"
+const val SOURCE_DEVICE = "device"
+const val SOURCE_DEMO = "demo"
+
 data class Track(
     val id: String,
     val title: String,
@@ -17,6 +21,8 @@ data class Track(
     val uri: Uri,
     val artUri: Uri? = null,
     val durationMs: Long = 0L,
+    /** "device", "demo" o el URI (texto) de la carpeta de donde viene. */
+    val sourceId: String = SOURCE_DEVICE,
 ) {
     fun toMediaItem(): MediaItem =
         MediaItem.Builder()
@@ -27,10 +33,22 @@ data class Track(
                     .setTitle(title)
                     .setArtist(artist)
                     .setArtworkUri(artUri)
+                    .setDurationMs(durationMs)
                     .build()
             )
             .build()
 }
+
+/** Reconstruye la pista a partir de lo que tiene el reproductor. */
+fun MediaItem.toTrack(): Track = Track(
+    id = mediaId,
+    title = mediaMetadata.title?.toString() ?: "Desconocido",
+    artist = mediaMetadata.artist?.toString() ?: "",
+    uri = localConfiguration?.uri ?: Uri.EMPTY,
+    artUri = mediaMetadata.artworkUri,
+    durationMs = mediaMetadata.durationMs ?: 0L,
+    sourceId = "",
+)
 
 object TrackRepository {
 
@@ -56,7 +74,7 @@ object TrackRepository {
                 val artistCol = c.getColumnIndexOrThrow(MediaStore.Audio.Media.ARTIST)
                 val albumCol = c.getColumnIndexOrThrow(MediaStore.Audio.Media.ALBUM_ID)
                 val durCol = c.getColumnIndexOrThrow(MediaStore.Audio.Media.DURATION)
-                while (c.moveToNext() && result.size < 200) {
+                while (c.moveToNext() && result.size < 500) {
                     val id = c.getLong(idCol)
                     val albumId = c.getLong(albumCol)
                     result += Track(
@@ -68,6 +86,7 @@ object TrackRepository {
                             "content://media/external/audio/albumart".toUri(), albumId
                         ),
                         durationMs = c.getLong(durCol),
+                        sourceId = SOURCE_DEVICE,
                     )
                 }
             }
@@ -76,14 +95,13 @@ object TrackRepository {
     }
 
     /** Pistas de prueba (streaming) para ver la app funcionando sin musica local. */
-    fun demo(): List<Track> = listOf(
-        Track("demo1", "SoundHelix Song 1", "SoundHelix",
-            "https://www.soundhelix.com/examples/mp3/SoundHelix-Song-1.mp3".toUri()),
-        Track("demo2", "SoundHelix Song 2", "SoundHelix",
-            "https://www.soundhelix.com/examples/mp3/SoundHelix-Song-2.mp3".toUri()),
-        Track("demo3", "SoundHelix Song 3", "SoundHelix",
-            "https://www.soundhelix.com/examples/mp3/SoundHelix-Song-3.mp3".toUri()),
-        Track("demo4", "SoundHelix Song 4", "SoundHelix",
-            "https://www.soundhelix.com/examples/mp3/SoundHelix-Song-4.mp3".toUri()),
-    )
+    fun demo(): List<Track> = (1..4).map { n ->
+        Track(
+            id = "demo$n",
+            title = "SoundHelix Song $n",
+            artist = "SoundHelix",
+            uri = "https://www.soundhelix.com/examples/mp3/SoundHelix-Song-$n.mp3".toUri(),
+            sourceId = SOURCE_DEMO,
+        )
+    }
 }
