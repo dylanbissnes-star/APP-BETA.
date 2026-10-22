@@ -6,17 +6,20 @@ import androidx.activity.compose.BackHandler
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.animation.AnimatedContent
+import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.core.FastOutSlowInEasing
 import androidx.compose.animation.core.tween
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.animation.slideInHorizontally
+import androidx.compose.animation.slideInVertically
 import androidx.compose.animation.slideOutHorizontally
+import androidx.compose.animation.slideOutVertically
 import androidx.compose.animation.togetherWith
 import androidx.compose.foundation.Image
-import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -31,6 +34,7 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.rounded.QueueMusic
 import androidx.compose.material.icons.rounded.Home
+import androidx.compose.material.icons.rounded.KeyboardArrowDown
 import androidx.compose.material.icons.rounded.LibraryMusic
 import androidx.compose.material.icons.rounded.Search
 import androidx.compose.material3.CircularProgressIndicator
@@ -40,6 +44,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.runtime.snapshotFlow
@@ -48,25 +53,30 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.lerp
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.example.glassplayer.PlayerUiState
 import com.example.glassplayer.PlayerViewModel
 import com.example.glassplayer.R
-import com.example.glassplayer.ui.components.AuroraBackground
 import com.example.glassplayer.ui.components.CoverCarousel
 import com.example.glassplayer.ui.components.DockItem
-import com.example.glassplayer.ui.components.GlassControlBar
 import com.example.glassplayer.ui.components.GlassDock
+import com.example.glassplayer.ui.components.MiniPlayer
 import com.example.glassplayer.ui.components.NowPlayingInfo
-import com.example.glassplayer.ui.components.ScreenHeader
+import com.example.glassplayer.ui.components.PlainIconButton
+import com.example.glassplayer.ui.components.PlayerControls
+import com.example.glassplayer.ui.components.SphereBackground
 import com.example.glassplayer.ui.components.backdropSource
-import com.example.glassplayer.ui.components.blackGlass
+import com.example.glassplayer.ui.components.glass
 import com.example.glassplayer.ui.components.rememberBackdropState
 import com.example.glassplayer.ui.components.rememberCoverPalette
+import com.example.glassplayer.ui.theme.Frost
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.drop
 
@@ -84,8 +94,14 @@ fun PlayerScreen(vm: PlayerViewModel) {
     val state by vm.state.collectAsStateWithLifecycle()
     val art = state.current?.artUri
     val palette = rememberCoverPalette(art)
+    val accent = remember(palette) { lerp(palette[2], Color(0xFFD81B4A), 0.35f) }
     var screen by rememberSaveable { mutableStateOf(Screen.Home) }
-    val backdrop = rememberBackdropState()
+
+    // Dos "fuentes" de desenfoque:
+    //  - bgBackdrop: solo el fondo de esferas (lo desenfoca el panel grande)
+    //  - allBackdrop: fondo + panel + pantallas (lo desenfocan el dock y el mini reproductor)
+    val bgBackdrop = rememberBackdropState()
+    val allBackdrop = rememberBackdropState()
 
     // Selector de carpetas del sistema (Storage Access Framework)
     val folderPicker = rememberLauncherForActivityResult(ActivityResultContracts.OpenDocumentTree()) { uri ->
@@ -94,86 +110,123 @@ fun PlayerScreen(vm: PlayerViewModel) {
 
     BackHandler(enabled = screen != Screen.Home) { screen = Screen.Home }
 
+    val panelShape = RoundedCornerShape(36.dp)
+
     Box(Modifier.fillMaxSize()) {
-        // Todo lo que queda DETRAS del dock: el dock desenfoca esta capa (cristal real)
-        Box(Modifier.fillMaxSize().backdropSource(backdrop)) {
-            // Fondo negro con luz ambiental en escala de grises
-            AuroraBackground(colors = palette, art = art)
+        Box(Modifier.fillMaxSize().backdropSource(allBackdrop)) {
+            // Fondo de color con esferas brillantes (sus colores salen de la portada)
+            Box(Modifier.fillMaxSize().backdropSource(bgBackdrop)) {
+                SphereBackground(colors = palette)
+                // Marca de agua: el logo, grande y muy tenue
+                Image(
+                    painter = painterResource(R.drawable.logo_mark),
+                    contentDescription = null,
+                    modifier = Modifier
+                        .align(Alignment.Center)
+                        .fillMaxWidth(0.9f)
+                        .alpha(0.06f),
+                )
+            }
 
-            // Marca de agua: el logo, grande y muy tenue
-            Image(
-                painter = painterResource(R.drawable.logo_mark),
-                contentDescription = null,
-                modifier = Modifier
-                    .align(Alignment.Center)
-                    .fillMaxWidth(0.9f)
-                    .alpha(0.05f),
-            )
-
-            // Las pantallas comparten fondo, cabecera y dock; cambian con un deslizamiento suave
-            AnimatedContent(
-                targetState = screen,
-                modifier = Modifier.fillMaxSize(),
-                transitionSpec = {
-                    val dir = if (targetState.ordinal > initialState.ordinal) 1 else -1
-                    (slideInHorizontally(tween(380, easing = FastOutSlowInEasing)) { (it / 5) * dir } +
-                        fadeIn(tween(300))) togetherWith
-                        (slideOutHorizontally(tween(300, easing = FastOutSlowInEasing)) { -(it / 5) * dir } +
-                            fadeOut(tween(200)))
-                },
-                label = "screens",
-            ) { target ->
-                when (target) {
-                    Screen.Home -> HomeContent(
-                        state = state,
-                        vm = vm,
-                        onOpenQueue = { screen = Screen.Queue },
-                    )
-                    Screen.Search -> SearchScreen(
-                        state = state,
-                        onPlay = { list, index ->
-                            vm.playFromList(list, index)
-                            screen = Screen.Home
-                        },
-                    )
-                    Screen.Library -> LibraryScreen(
-                        state = state,
-                        onAddFolder = { folderPicker.launch(null) },
-                        onRemoveFolder = vm::removeFolder,
-                        onSelectSource = vm::selectSource,
-                        onPlay = { list, index ->
-                            vm.playFromList(list, index)
-                            screen = Screen.Home
-                        },
-                        onQueue = vm::addToQueue,
-                    )
-                    Screen.Queue -> QueueScreen(
-                        state = state,
-                        onJump = { index ->
-                            vm.jumpTo(index)
-                            screen = Screen.Home
-                        },
-                        onRemove = vm::removeFromQueue,
-                        onClearQueued = vm::clearQueued,
-                    )
+            // Panel grande de cristal esmerilado: contiene todas las pantallas
+            Box(
+                Modifier
+                    .fillMaxSize()
+                    .statusBarsPadding()
+                    .navigationBarsPadding()
+                    .padding(horizontal = 12.dp, vertical = 10.dp)
+                    .shadow(28.dp, panelShape, ambientColor = Frost.Tint, spotColor = Frost.Tint)
+                    .glass(panelShape, strength = 1.0f, darkness = 0.16f, backdrop = bgBackdrop)
+            ) {
+                AnimatedContent(
+                    targetState = screen,
+                    modifier = Modifier.fillMaxSize(),
+                    transitionSpec = {
+                        val dir = if (targetState.ordinal > initialState.ordinal) 1 else -1
+                        (slideInHorizontally(tween(380, easing = FastOutSlowInEasing)) { (it / 5) * dir } +
+                            fadeIn(tween(300))) togetherWith
+                            (slideOutHorizontally(tween(300, easing = FastOutSlowInEasing)) { -(it / 5) * dir } +
+                                fadeOut(tween(200)))
+                    },
+                    label = "screens",
+                ) { target ->
+                    when (target) {
+                        Screen.Home -> HomeContent(
+                            state = state,
+                            vm = vm,
+                            accent = accent,
+                            onOpenLibrary = { screen = Screen.Library },
+                            onOpenSearch = { screen = Screen.Search },
+                            onOpenQueue = { screen = Screen.Queue },
+                        )
+                        Screen.Search -> SearchScreen(
+                            state = state,
+                            onPlay = { list, index ->
+                                vm.playFromList(list, index)
+                                screen = Screen.Home
+                            },
+                        )
+                        Screen.Library -> LibraryScreen(
+                            state = state,
+                            onAddFolder = { folderPicker.launch(null) },
+                            onRemoveFolder = vm::removeFolder,
+                            onSelectSource = vm::selectSource,
+                            onPlay = { list, index ->
+                                vm.playFromList(list, index)
+                                screen = Screen.Home
+                            },
+                            onQueue = vm::addToQueue,
+                        )
+                        Screen.Queue -> QueueScreen(
+                            state = state,
+                            onJump = { index ->
+                                vm.jumpTo(index)
+                                screen = Screen.Home
+                            },
+                            onRemove = vm::removeFromQueue,
+                            onClearQueued = vm::clearQueued,
+                        )
+                    }
                 }
             }
         }
 
-        // Dock flotante de navegacion (cristal con desenfoque del fondo)
+        // Mini reproductor (fuera del reproductor principal), sobre el dock
+        AnimatedVisibility(
+            visible = screen != Screen.Home && state.current != null,
+            modifier = Modifier
+                .align(Alignment.BottomCenter)
+                .navigationBarsPadding()
+                .padding(start = 26.dp, end = 26.dp, bottom = 92.dp),
+            enter = fadeIn(tween(250)) + slideInVertically(tween(300)) { it / 2 },
+            exit = fadeOut(tween(180)) + slideOutVertically(tween(220)) { it / 2 },
+        ) {
+            state.current?.let { track ->
+                MiniPlayer(
+                    track = track,
+                    playing = state.isPlaying,
+                    onToggle = vm::togglePlay,
+                    onNext = vm::next,
+                    onOpen = { screen = Screen.Home },
+                    backdrop = allBackdrop,
+                )
+            }
+        }
+
+        // Dock flotante de navegacion (cristal con desenfoque de lo que hay detras)
         GlassDock(
             items = dockItems,
             selectedIndex = screen.ordinal,
             onSelect = { screen = Screen.entries[it] },
             badges = mapOf(Screen.Queue.ordinal to state.queuedCount),
-            backdrop = backdrop,
+            backdrop = allBackdrop,
             modifier = Modifier
                 .align(Alignment.BottomCenter)
                 .navigationBarsPadding()
-                .padding(bottom = 16.dp),
+                .padding(bottom = 24.dp),
         )
 
-        // Aviso breve (p. ej. "añadida a la cola"), por encima del dock
+        // Aviso breve (p. ej. "añadida a la cola"), por encima del mini reproductor
         state.message?.let { msg ->
             LaunchedEffect(msg) {
                 delay(1800)
@@ -184,9 +237,9 @@ fun PlayerScreen(vm: PlayerViewModel) {
                 Modifier
                     .align(Alignment.BottomCenter)
                     .navigationBarsPadding()
-                    .padding(start = 24.dp, end = 24.dp, bottom = 92.dp)
-                    .shadow(12.dp, pill, ambientColor = Color.Black, spotColor = Color.Black)
-                    .blackGlass(pill)
+                    .padding(start = 24.dp, end = 24.dp, bottom = 164.dp)
+                    .shadow(12.dp, pill, ambientColor = Frost.Tint, spotColor = Frost.Tint)
+                    .glass(pill, strength = 1.6f, darkness = 0.40f)
                     .padding(horizontal = 20.dp, vertical = 12.dp)
             ) {
                 Text(
@@ -205,6 +258,9 @@ fun PlayerScreen(vm: PlayerViewModel) {
 private fun HomeContent(
     state: PlayerUiState,
     vm: PlayerViewModel,
+    accent: Color,
+    onOpenLibrary: () -> Unit,
+    onOpenSearch: () -> Unit,
     onOpenQueue: () -> Unit,
 ) {
     val context = LocalContext.current
@@ -212,14 +268,26 @@ private fun HomeContent(
     Column(
         Modifier
             .fillMaxSize()
-            .statusBarsPadding()
-            .navigationBarsPadding()
-            .padding(bottom = 92.dp), // espacio para el dock
+            .padding(bottom = 88.dp), // espacio para el dock
     ) {
-        ScreenHeader(
-            title = "Inicio",
-            subtitle = "Reproduciendo ahora",
-        )
+        // Barra superior: chevron (a la biblioteca), titulo y buscar (como en la referencia)
+        Row(
+            Modifier
+                .fillMaxWidth()
+                .padding(horizontal = 10.dp, vertical = 10.dp),
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            PlainIconButton(Icons.Rounded.KeyboardArrowDown, "Ir a la biblioteca", onOpenLibrary, size = 48.dp, iconSize = 32.dp)
+            Text(
+                "Reproduciendo ahora",
+                modifier = Modifier.weight(1f),
+                textAlign = TextAlign.Center,
+                color = Frost.TextSecondary,
+                fontSize = 14.sp,
+                fontWeight = FontWeight.Medium,
+            )
+            PlainIconButton(Icons.Rounded.Search, "Buscar", onOpenSearch, size = 48.dp, iconSize = 26.dp)
+        }
 
         if (state.tracks.isEmpty()) {
             Box(Modifier.weight(1f).fillMaxWidth(), contentAlignment = Alignment.Center) {
@@ -248,14 +316,15 @@ private fun HomeContent(
         Box(Modifier.weight(1f), contentAlignment = Alignment.Center) {
             Column(
                 Modifier.verticalScroll(rememberScrollState()),
-                verticalArrangement = Arrangement.Center,
+                horizontalAlignment = Alignment.CenterHorizontally,
             ) {
                 CoverCarousel(state.tracks, pagerState)
-                Spacer(Modifier.height(12.dp))
+                Spacer(Modifier.height(16.dp))
                 NowPlayingInfo(state.current)
-                Spacer(Modifier.height(8.dp))
-                GlassControlBar(
+                Spacer(Modifier.height(4.dp))
+                PlayerControls(
                     state = state,
+                    accent = accent,
                     onPrevious = vm::previous,
                     onTogglePlay = vm::togglePlay,
                     onNext = vm::next,
@@ -264,14 +333,13 @@ private fun HomeContent(
                     onRepeat = vm::cycleRepeat,
                     onOpenQueue = onOpenQueue,
                     onOpenDevices = { openAudioOutputs(context) },
-                    modifier = Modifier.padding(horizontal = 16.dp),
                 )
             }
         }
     }
 }
 
-/** Abre el selector de salida de audio del sistema (altavoz, Bluetooth, etc.). */
+/** Abre el selector de salida de audio del sistema (altavoz, Bluetooth, volumen). */
 private fun openAudioOutputs(context: android.content.Context) {
     val panel = Intent(Settings.Panel.ACTION_VOLUME)
     val fallback = Intent(Settings.ACTION_BLUETOOTH_SETTINGS)

@@ -1,40 +1,35 @@
 # GlassPlayer
 
-Base de reproductor de música para Android con estilo **glassmorphism**.
+Base de reproductor de música para Android con estilo **glassmorphism** (cristal esmerilado claro).
 Kotlin + Jetpack Compose + Media3 (ExoPlayer).
 
 ## Qué incluye
 
-- **Black Glass (monocromo estricto)**: paleta `ui/theme/BlackGlass.kt` (negro #000, #080808,
-  #101010, texto #F5F5F5 / #909090, bordes y brillos blancos translúcidos). Sin colores de acento:
-  solo las portadas conservan su color.
-- **Fondo negro con luz ambiental en escala de grises** sacada de la portada actual, más un haz de
-  luz tenue arriba a la derecha.
-- **Cristal con desenfoque real** (Android 12+): el dock desenfoca lo que pasa por detrás
-  (`Backdrop.kt`, capas gráficas de Compose, sin librerías). En versiones anteriores queda translúcido.
-- **Carrusel con profundidad**: portada central nítida; las vecinas, más pequeñas, tenues y
-  desenfocadas. Título, artista y álbum aparecen debajo de la portada central.
-- **Panel de reproducción**: progreso fino, aleatorio/anterior/play/siguiente/repetir, **volumen**,
-  **dispositivos de audio** (selector del sistema) y acceso a la **cola**.
-- **Buscar**: campo negro con borde translúcido; busca por título, artista o álbum.
-- **Dock flotante** de navegación (Inicio / Buscar / Biblioteca / Cola): la pestaña activa se expande
-  en una píldora con icono y texto, borde degradado y halo de luz; la cola muestra un contador.
-- **Cabecera común** (título, subtítulo, acción y separador fino) en las tres pantallas.
-- **Animaciones**: los botones se encogen y rebotan al pulsar, los iconos cambian con fundido,
-  el botón de play «respira» mientras suena y las filas muestran barras de ecualizador.
-- **Carrusel 3D** de portadas en tarjetas de vidrio (Pager + `graphicsLayer`).
-- **Botones flotantes de vidrio negro** con borde degradado (`Modifier.blackGlass`) y tarjetas de
-  **cristal translúcido** con borde suave y reflejo diagonal (`Modifier.glass`).
-- **Controles**: cápsula de vidrio con la canción actual y barra de progreso (toca o arrastra),
-  y debajo aleatorio / anterior / play-pausa / siguiente / repetir.
-- **Biblioteca** (botón arriba a la izquierda): listado completo con filtros por origen.
-  Toca una canción para reproducirla; **desliza a la izquierda** para añadirla a la cola.
-- **Carpetas**: en la biblioteca, botón «agregar carpeta» (selector del sistema). Se recorren las
-  subcarpetas, se leen título/artista/portada de cada archivo y se recuerdan al reiniciar.
-  Selecciona una carpeta (chip) para ver solo sus canciones; el ✕ del chip la quita.
-- **Cola de reproducción** (botón arriba a la derecha, con contador): «Reproduciendo ahora»,
-  «En cola» (lo que añadiste, suena primero) y «A continuación». Toca para saltar, ✕ para quitar,
-  «Vaciar cola» para limpiar lo añadido.
+- **Cristal esmerilado (Frosted Glass)**: un panel grande de cristal claro y translúcido sobre un
+  fondo de color con **esferas brillantes** que flotan despacio. Los colores del fondo salen de la
+  portada que suena (`SphereBackground.kt`); paleta en `ui/theme/Frost.kt`.
+- **Desenfoque real** (Android 12+): el panel, el dock y el mini reproductor desenfocan lo que hay
+  detrás (`Backdrop.kt`, capas gráficas de Compose, sin librerías). En versiones anteriores quedan
+  translúcidos.
+- **Reproductor** (Inicio): portada grande con marco de cristal (carrusel con profundidad), título y
+  artista centrados, anterior / play-pausa / siguiente como símbolos blancos sin fondo, barra de
+  progreso fina con tiempos, y una pastilla de cristal con aleatorio, repetir, salida de audio
+  (selector del sistema, con volumen) y cola.
+- **Mini reproductor** flotante (portada, título, pausa y siguiente) en Buscar, Biblioteca y Cola;
+  al tocarlo vuelves al reproductor.
+- **Buscar**: campo de cristal; busca por título, artista o álbum. Filas con triángulo de reproducir.
+- **Dock flotante** (Inicio / Buscar / Biblioteca / Cola): la pestaña activa se expande en una
+  píldora; la cola muestra un contador.
+- **Biblioteca**: rejilla de tarjetas pequeñas con las fuentes (todas, dispositivo, demo y cada
+  carpeta) y debajo la lista de canciones. Toca para reproducir; **desliza a la izquierda** para
+  añadir a la cola.
+- **Carpetas**: botón «agregar carpeta» (selector del sistema). Se recorren las subcarpetas, se leen
+  título/artista/portada de cada archivo y se recuerdan al reiniciar. Selecciona una tarjeta de
+  carpeta para ver solo sus canciones; el ✕ la quita.
+- **Cola de reproducción**: «Reproduciendo ahora», «En cola» (lo que añadiste, suena primero) y
+  «A continuación». Toca para saltar, ✕ para quitar, «Vaciar cola» para limpiar lo añadido.
+- **Animaciones**: botones con rebote al pulsar, transiciones suaves entre pantallas, esferas en
+  movimiento lento y barras de ecualizador en la canción que suena.
 - **Reproducción en segundo plano** con notificación y controles en pantalla de bloqueo
   (`MediaSessionService`).
 - Lee la **música local** del teléfono (MediaStore). Si no hay, carga 4 pistas de prueba
@@ -65,16 +60,17 @@ app/src/main/java/com/example/glassplayer/
     ├── QueueScreen.kt       Cola de reproducción
     ├── theme/Theme.kt
     └── components/
-        ├── Glass.kt             Modifier.glass() y Modifier.blackGlass()
-        ├── BlackGlassButton.kt  Botones flotantes negros (animados)
+        ├── Glass.kt             Modifier.glass() y Modifier.glassStrong()
+        ├── GlassButton.kt       Botones de cristal, iconos simples y pastillas
         ├── GlassDock.kt         Dock de navegación
-        ├── ScreenHeader.kt      Cabecera común + separador
+        ├── MiniPlayer.kt        Mini reproductor flotante
+        ├── ScreenHeader.kt      Cabecera común
         ├── Interactions.kt      pressClick(): pulsación con resorte
         ├── EqBars.kt            Barras de ecualizador
         ├── TrackRow.kt          Fila de canción y miniatura
-        ├── AuroraBackground.kt  Fondo + extracción de colores
-        ├── CoverCarousel.kt     Carrusel 3D
-        └── GlassControlBar.kt   Cápsula de controles
+        ├── SphereBackground.kt  Fondo de esferas + extracción de colores
+        ├── CoverCarousel.kt     Carrusel de portadas
+        └── PlayerControls.kt    Transporte, progreso y pastilla de acciones
 ```
 
 ## Icono y nombre

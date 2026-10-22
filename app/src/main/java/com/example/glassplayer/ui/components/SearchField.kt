@@ -35,9 +35,9 @@ import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.example.glassplayer.ui.theme.BlackGlass
+import com.example.glassplayer.ui.theme.Frost
 
-/** Campo de busqueda negro con borde translucido que se ilumina suavemente al enfocarlo. */
+/** Campo de busqueda de cristal con borde translucido que se ilumina suavemente al enfocarlo. */
 @Composable
 fun GlassSearchField(
     query: String,
@@ -48,18 +48,18 @@ fun GlassSearchField(
     val shape = RoundedCornerShape(50)
     val source = remember { MutableInteractionSource() }
     val focused by source.collectIsFocusedAsState()
-    val borderAlpha by animateFloatAsState(if (focused) 0.45f else 0.14f, tween(250), label = "searchBorder")
+    val borderAlpha by animateFloatAsState(if (focused) 0.85f else 0.40f, tween(250), label = "searchBorder")
 
     Row(
         modifier
             .fillMaxWidth()
             .clip(shape)
-            .background(Color.Black.copy(alpha = 0.85f))
+            .background(Color.White.copy(alpha = 0.18f))
             .border(1.dp, Color.White.copy(alpha = borderAlpha), shape)
             .padding(horizontal = 16.dp, vertical = 12.dp),
         verticalAlignment = Alignment.CenterVertically,
     ) {
-        Icon(Icons.Rounded.Search, null, tint = Color.White.copy(alpha = 0.6f), modifier = Modifier.size(20.dp))
+        Icon(Icons.Rounded.Search, null, tint = Color.White.copy(alpha = 0.85f), modifier = Modifier.size(20.dp))
         Box(
             Modifier
                 .weight(1f)
@@ -67,13 +67,13 @@ fun GlassSearchField(
             contentAlignment = Alignment.CenterStart,
         ) {
             if (query.isEmpty()) {
-                Text(placeholder, color = BlackGlass.TextSecondary, fontSize = 15.sp, maxLines = 1)
+                Text(placeholder, color = Frost.TextSecondary, fontSize = 15.sp, maxLines = 1)
             }
             BasicTextField(
                 value = query,
                 onValueChange = onQueryChange,
                 singleLine = true,
-                textStyle = TextStyle(color = BlackGlass.TextPrimary, fontSize = 15.sp),
+                textStyle = TextStyle(color = Frost.TextPrimary, fontSize = 15.sp),
                 cursorBrush = SolidColor(Color.White),
                 interactionSource = source,
                 keyboardOptions = KeyboardOptions(imeAction = ImeAction.Search),
@@ -86,7 +86,7 @@ fun GlassSearchField(
                     .size(24.dp)
                     .pressClick({ onQueryChange("") }, pressedScale = 0.85f)
                     .clip(CircleShape)
-                    .background(Color.White.copy(alpha = 0.14f)),
+                    .background(Color.White.copy(alpha = 0.30f)),
                 contentAlignment = Alignment.Center,
             ) {
                 Icon(Icons.Rounded.Close, "Borrar búsqueda", tint = Color.White, modifier = Modifier.size(14.dp))

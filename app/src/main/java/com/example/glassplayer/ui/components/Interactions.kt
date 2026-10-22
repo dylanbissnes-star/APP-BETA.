@@ -15,7 +15,7 @@ import androidx.compose.ui.graphics.graphicsLayer
 /**
  * Click con animacion de "resorte": al presionar se encoge un poco y rebota al soltar.
  * Reemplaza al ripple para que los botones de cristal se sientan suaves.
- * Colocalo ANTES de glass()/blackGlass() para que escale tambien el borde.
+ * Colocalo ANTES de glass()/glassStrong() para que escale tambien el borde.
  */
 fun Modifier.pressClick(
     onClick: () -> Unit,

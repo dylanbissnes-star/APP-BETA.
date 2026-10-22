@@ -10,8 +10,8 @@ import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.sp
 
-/** Negro de base de toda la app. */
-val GlassBase = Color(0xFF000000)
+/** Color de base (indigo profundo) que se ve antes de que cargue el fondo de esferas. */
+val GlassBase = Color(0xFF2A1B5E)
 
 private val Colors = darkColorScheme(
     background = GlassBase,
