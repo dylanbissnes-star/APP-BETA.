@@ -39,7 +39,7 @@ import com.example.glassplayer.PlayerUiState
 
 /**
  * Parte baja del reproductor:
- *  - capsula de vidrio con la cancion actual y la barra de progreso (toca o arrastra)
+ *  - capsula de cristal con la cancion actual y la barra de progreso (toca o arrastra)
  *  - fila de botones flotantes negros: aleatorio, anterior, play/pausa, siguiente, repetir
  */
 @Composable
@@ -55,7 +55,7 @@ fun GlassControlBar(
 ) {
     Column(
         modifier.fillMaxWidth(),
-        verticalArrangement = Arrangement.spacedBy(20.dp),
+        verticalArrangement = Arrangement.spacedBy(18.dp),
         horizontalAlignment = Alignment.CenterHorizontally,
     ) {
         NowPlayingCapsule(state, onSeek)
@@ -70,21 +70,24 @@ fun GlassControlBar(
             BlackGlassButton(
                 Icons.Rounded.Shuffle, "Aleatorio", onShuffle,
                 size = 44.dp,
+                active = state.shuffle,
                 tint = if (state.shuffle) Color.White else Color.White.copy(alpha = 0.45f),
             )
-            BlackGlassButton(Icons.Rounded.SkipPrevious, "Anterior", onPrevious, size = 56.dp)
+            BlackGlassButton(Icons.Rounded.SkipPrevious, "Anterior", onPrevious, size = 54.dp)
             BlackGlassButton(
                 if (state.isPlaying) Icons.Rounded.Pause else Icons.Rounded.PlayArrow,
                 if (state.isPlaying) "Pausar" else "Reproducir",
                 onTogglePlay,
-                size = 72.dp,
-                iconSize = 38.dp,
+                size = 70.dp,
+                iconSize = 36.dp,
+                pulse = state.isPlaying,
             )
-            BlackGlassButton(Icons.Rounded.SkipNext, "Siguiente", onNext, size = 56.dp)
+            BlackGlassButton(Icons.Rounded.SkipNext, "Siguiente", onNext, size = 54.dp)
             BlackGlassButton(
                 if (state.repeatMode == Player.REPEAT_MODE_ONE) Icons.Rounded.RepeatOne else Icons.Rounded.Repeat,
                 "Repetir", onRepeat,
                 size = 44.dp,
+                active = state.repeatMode != Player.REPEAT_MODE_OFF,
                 tint = if (state.repeatMode != Player.REPEAT_MODE_OFF) Color.White else Color.White.copy(alpha = 0.45f),
             )
         }
@@ -117,16 +120,17 @@ private fun NowPlayingCapsule(state: PlayerUiState, onSeek: (Float) -> Unit) {
                 Text(
                     track?.artist ?: "",
                     style = MaterialTheme.typography.bodyMedium,
-                    color = Color.White.copy(alpha = 0.65f),
+                    color = Color.White.copy(alpha = 0.60f),
                     maxLines = 1,
                     overflow = TextOverflow.Ellipsis,
                 )
             }
+            EqBars(active = state.isPlaying, modifier = Modifier.padding(end = 4.dp))
         }
         SeekBar(state.progress, onSeek, Modifier.padding(top = 6.dp))
         Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
-            Text(formatTime(state.positionMs), style = MaterialTheme.typography.labelSmall, color = Color.White.copy(alpha = 0.6f))
-            Text(formatTime(state.durationMs), style = MaterialTheme.typography.labelSmall, color = Color.White.copy(alpha = 0.6f))
+            Text(formatTime(state.positionMs), style = MaterialTheme.typography.labelSmall, color = Color.White.copy(alpha = 0.55f))
+            Text(formatTime(state.durationMs), style = MaterialTheme.typography.labelSmall, color = Color.White.copy(alpha = 0.55f))
         }
     }
 }
@@ -165,7 +169,7 @@ private fun SeekBar(progress: Float, onSeek: (Float) -> Unit, modifier: Modifier
                 .fillMaxWidth()
                 .height(4.dp)
                 .clip(CircleShape)
-                .background(Color.White.copy(alpha = 0.18f))
+                .background(Color.White.copy(alpha = 0.16f))
         )
         Box(
             Modifier

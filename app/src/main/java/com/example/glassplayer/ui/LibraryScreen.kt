@@ -1,26 +1,23 @@
 package com.example.glassplayer.ui
 
+import androidx.compose.animation.animateContentSize
 import androidx.compose.foundation.background
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyRow
-import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.rounded.ArrowBack
 import androidx.compose.material.icons.automirrored.rounded.PlaylistAdd
 import androidx.compose.material.icons.rounded.Close
 import androidx.compose.material.icons.rounded.CreateNewFolder
@@ -53,9 +50,11 @@ import com.example.glassplayer.data.SOURCE_DEVICE
 import com.example.glassplayer.data.Track
 import com.example.glassplayer.ui.components.BlackGlassButton
 import com.example.glassplayer.ui.components.BlackGlassPill
+import com.example.glassplayer.ui.components.ScreenHeader
 import com.example.glassplayer.ui.components.TrackRow
 import com.example.glassplayer.ui.components.blackGlass
 import com.example.glassplayer.ui.components.glass
+import com.example.glassplayer.ui.components.pressClick
 
 /**
  * Pantalla "Biblioteca": listado completo de canciones.
@@ -66,7 +65,6 @@ import com.example.glassplayer.ui.components.glass
 @Composable
 fun LibraryScreen(
     state: PlayerUiState,
-    onBack: () -> Unit,
     onAddFolder: () -> Unit,
     onRemoveFolder: (String) -> Unit,
     onSelectSource: (String) -> Unit,
@@ -84,36 +82,19 @@ fun LibraryScreen(
     Column(
         modifier
             .fillMaxSize()
-            .background(Color.Black.copy(alpha = 0.40f))
             .statusBarsPadding()
-            .navigationBarsPadding()
     ) {
-        // Cabecera
-        Row(
-            Modifier
-                .fillMaxWidth()
-                .padding(horizontal = 16.dp, vertical = 12.dp),
-            verticalAlignment = Alignment.CenterVertically,
-        ) {
-            BlackGlassButton(Icons.AutoMirrored.Rounded.ArrowBack, "Volver", onBack)
-            Column(
-                Modifier
-                    .weight(1f)
-                    .padding(horizontal = 14.dp)
-            ) {
-                Text("Biblioteca", style = MaterialTheme.typography.titleLarge, color = Color.White)
-                Text(
-                    "${visible.size} canciones",
-                    style = MaterialTheme.typography.bodyMedium,
-                    color = Color.White.copy(alpha = 0.6f),
-                )
-            }
-            BlackGlassButton(Icons.Rounded.CreateNewFolder, "Agregar carpeta", onAddFolder)
-        }
+        ScreenHeader(
+            title = "Biblioteca",
+            subtitle = "${visible.size} canciones",
+            trailing = {
+                BlackGlassButton(Icons.Rounded.CreateNewFolder, "Agregar carpeta", onAddFolder)
+            },
+        )
 
         // Filtros por origen
         LazyRow(
-            contentPadding = PaddingValues(horizontal = 16.dp),
+            contentPadding = PaddingValues(horizontal = 16.dp, vertical = 14.dp),
             horizontalArrangement = Arrangement.spacedBy(8.dp),
         ) {
             item(key = SOURCE_ALL) {
@@ -145,23 +126,26 @@ fun LibraryScreen(
         Text(
             "Desliza una canción a la izquierda para añadirla a la cola",
             style = MaterialTheme.typography.labelSmall,
-            color = Color.White.copy(alpha = 0.5f),
-            modifier = Modifier.padding(start = 20.dp, end = 20.dp, top = 12.dp, bottom = 8.dp),
+            color = Color.White.copy(alpha = 0.45f),
+            modifier = Modifier.padding(start = 20.dp, end = 20.dp, bottom = 8.dp),
         )
 
         if (visible.isEmpty()) {
             EmptyLibrary(scanning = state.scanning, onAddFolder = onAddFolder)
         } else {
             LazyColumn(
-                contentPadding = PaddingValues(start = 16.dp, end = 16.dp, top = 4.dp, bottom = 24.dp),
-                verticalArrangement = Arrangement.spacedBy(8.dp),
+                // Espacio inferior para que el dock flotante no tape la ultima fila
+                contentPadding = PaddingValues(start = 16.dp, end = 16.dp, top = 4.dp, bottom = 120.dp),
+                verticalArrangement = Arrangement.spacedBy(10.dp),
             ) {
                 itemsIndexed(visible, key = { _, t -> t.id }) { index, track ->
                     SwipeableTrackRow(
                         track = track,
                         isCurrent = track.id == currentId,
+                        playing = state.isPlaying,
                         onClick = { onPlay(visible, index) },
                         onQueue = { onQueue(track) },
+                        modifier = Modifier.animateItem(),
                     )
                 }
             }
@@ -174,8 +158,10 @@ fun LibraryScreen(
 private fun SwipeableTrackRow(
     track: Track,
     isCurrent: Boolean,
+    playing: Boolean,
     onClick: () -> Unit,
     onQueue: () -> Unit,
+    modifier: Modifier = Modifier,
 ) {
     val haptic = LocalHapticFeedback.current
     val latestOnQueue by rememberUpdatedState(onQueue)
@@ -192,6 +178,7 @@ private fun SwipeableTrackRow(
 
     SwipeToDismissBox(
         state = dismissState,
+        modifier = modifier,
         enableDismissFromStartToEnd = false,
         backgroundContent = {
             if (dismissState.dismissDirection == SwipeToDismissBoxValue.EndToStart) {
@@ -208,12 +195,12 @@ private fun SwipeableTrackRow(
                         color = Color.White,
                         modifier = Modifier.padding(end = 10.dp),
                     )
-                    BlackGlassButton(Icons.AutoMirrored.Rounded.PlaylistAdd, "Añadir a la cola", {}, size = 40.dp)
+                    BlackGlassButton(Icons.AutoMirrored.Rounded.PlaylistAdd, "Añadir a la cola", {}, size = 40.dp, active = true)
                 }
             }
         },
     ) {
-        TrackRow(track = track, isCurrent = isCurrent, onClick = onClick)
+        TrackRow(track = track, isCurrent = isCurrent, playing = playing, onClick = onClick)
     }
 }
 
@@ -228,8 +215,9 @@ private fun SourceChip(
     val shape = RoundedCornerShape(50)
     Row(
         Modifier
+            .pressClick(onClick, pressedScale = 0.94f)
             .then(if (selected) Modifier.blackGlass(shape) else Modifier.glass(shape, strength = 0.8f))
-            .clickable(onClick = onClick)
+            .animateContentSize()
             .padding(start = 14.dp, end = if (onRemove != null) 6.dp else 14.dp, top = 8.dp, bottom = 8.dp),
         verticalAlignment = Alignment.CenterVertically,
     ) {
@@ -249,9 +237,9 @@ private fun SourceChip(
             Box(
                 Modifier
                     .size(22.dp)
+                    .pressClick(onRemove)
                     .clip(CircleShape)
-                    .background(Color.White.copy(alpha = 0.15f))
-                    .clickable(onClick = onRemove),
+                    .background(Color.White.copy(alpha = 0.15f)),
                 contentAlignment = Alignment.Center,
             ) {
                 Icon(Icons.Rounded.Close, "Quitar carpeta", tint = Color.White, modifier = Modifier.size(14.dp))

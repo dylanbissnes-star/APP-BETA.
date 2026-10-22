@@ -38,7 +38,7 @@ import coil.compose.AsyncImage
 import com.example.glassplayer.data.Track
 import kotlin.math.abs
 
-private val CardWidth = 230.dp
+private val CardWidth = 208.dp
 
 /**
  * Carrusel 3D: la portada central se ve de frente y las vecinas

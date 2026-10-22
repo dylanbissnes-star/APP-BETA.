@@ -1,5 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <color name="glass_bg">#0A0A10</color>
-    <color name="ic_launcher_background">#1A0A0F</color>
+    <color name="glass_bg">#030305</color>
+    <!-- Negro puro: es el fondo del logo cromado -->
+    <color name="ic_launcher_background">#000000</color>
 </resources>
