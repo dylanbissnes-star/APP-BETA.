@@ -12,8 +12,21 @@ android {
         applicationId = "com.example.glassplayer"
         minSdk = 26
         targetSdk = 35
-        versionCode = 1
-        versionName = "1.0"
+        // En CI el numero de ejecucion sube solo, asi cada APK se instala como actualizacion
+        val run = System.getenv("GITHUB_RUN_NUMBER")?.toIntOrNull() ?: 1
+        versionCode = run
+        versionName = "1.0.$run"
+    }
+
+    // Clave de depuracion FIJA (app/debug.keystore): todas las APK firman igual, asi Android
+    // las instala encima de la anterior sin desinstalar. No es secreta (es solo de depuracion).
+    signingConfigs {
+        getByName("debug") {
+            storeFile = file("debug.keystore")
+            storePassword = "android"
+            keyAlias = "androiddebugkey"
+            keyPassword = "android"
+        }
     }
 
     buildTypes {
