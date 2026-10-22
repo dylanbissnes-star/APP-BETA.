@@ -5,9 +5,16 @@ Kotlin + Jetpack Compose + Media3 (ExoPlayer).
 
 ## Qué incluye
 
-- **Fondo aurora** animado que toma los colores de la portada actual (Palette).
+- **Fondo negro con luz ambiental**: la portada actual, muy difuminada y apagada, más manchas
+  suaves de sus colores y un haz de luz tenue arriba a la derecha. Predomina el negro.
+- **Dock flotante** de navegación (Reproductor / Biblioteca / Cola): la pestaña activa se expande
+  en una píldora con icono y texto, borde degradado y halo de luz; la cola muestra un contador.
+- **Cabecera común** (título, subtítulo, acción y separador fino) en las tres pantallas.
+- **Animaciones**: los botones se encogen y rebotan al pulsar, los iconos cambian con fundido,
+  el botón de play «respira» mientras suena y las filas muestran barras de ecualizador.
 - **Carrusel 3D** de portadas en tarjetas de vidrio (Pager + `graphicsLayer`).
-- **Botones flotantes de vidrio negro** con borde degradado (`Modifier.blackGlass`).
+- **Botones flotantes de vidrio negro** con borde degradado (`Modifier.blackGlass`) y tarjetas de
+  **cristal translúcido** con borde suave y reflejo diagonal (`Modifier.glass`).
 - **Controles**: cápsula de vidrio con la canción actual y barra de progreso (toca o arrastra),
   y debajo aleatorio / anterior / play-pausa / siguiente / repetir.
 - **Biblioteca** (botón arriba a la izquierda): listado completo con filtros por origen.
@@ -49,7 +56,11 @@ app/src/main/java/com/example/glassplayer/
     ├── theme/Theme.kt
     └── components/
         ├── Glass.kt             Modifier.glass() y Modifier.blackGlass()
-        ├── BlackGlassButton.kt  Botones flotantes negros
+        ├── BlackGlassButton.kt  Botones flotantes negros (animados)
+        ├── GlassDock.kt         Dock de navegación
+        ├── ScreenHeader.kt      Cabecera común + separador
+        ├── Interactions.kt      pressClick(): pulsación con resorte
+        ├── EqBars.kt            Barras de ecualizador
         ├── TrackRow.kt          Fila de canción y miniatura
         ├── AuroraBackground.kt  Fondo + extracción de colores
         ├── CoverCarousel.kt     Carrusel 3D

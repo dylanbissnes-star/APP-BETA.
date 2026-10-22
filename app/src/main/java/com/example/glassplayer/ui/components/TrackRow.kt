@@ -1,7 +1,6 @@
 package com.example.glassplayer.ui.components
 
 import androidx.compose.foundation.background
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -10,7 +9,6 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.rounded.GraphicEq
 import androidx.compose.material.icons.rounded.MusicNote
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
@@ -41,12 +39,12 @@ fun CoverThumb(artUri: Any?, size: Dp, corner: Dp = 12.dp, modifier: Modifier = 
         modifier
             .size(size)
             .clip(RoundedCornerShape(corner))
-            .background(Brush.linearGradient(listOf(Color(0xFF3A3A4A), Color(0xFF15151C)))),
+            .background(Brush.linearGradient(listOf(Color(0xFF2E2E38), Color(0xFF0E0E12)))),
         contentAlignment = Alignment.Center,
     ) {
         Icon(
             Icons.Rounded.MusicNote, null,
-            tint = Color.White.copy(alpha = 0.5f),
+            tint = Color.White.copy(alpha = 0.45f),
             modifier = Modifier.size(size * 0.45f),
         )
         if (artUri != null) {
@@ -60,25 +58,26 @@ fun CoverThumb(artUri: Any?, size: Dp, corner: Dp = 12.dp, modifier: Modifier = 
     }
 }
 
-/** Fila de cancion en vidrio. La usan la biblioteca y la cola. */
+/** Fila de cancion en cristal. La usan la biblioteca y la cola. */
 @Composable
 fun TrackRow(
     track: Track,
     isCurrent: Boolean,
     onClick: () -> Unit,
     modifier: Modifier = Modifier,
+    playing: Boolean = false,
     trailing: (@Composable () -> Unit)? = null,
 ) {
-    val shape = RoundedCornerShape(20.dp)
+    val shape = RoundedCornerShape(22.dp)
     Row(
         modifier
             .fillMaxWidth()
-            .glass(shape, strength = if (isCurrent) 1.4f else 0.75f)
-            .clickable(onClick = onClick)
+            .pressClick(onClick, pressedScale = 0.97f)
+            .glass(shape, strength = if (isCurrent) 1.6f else 0.8f)
             .padding(8.dp),
         verticalAlignment = Alignment.CenterVertically,
     ) {
-        CoverThumb(track.artUri, 48.dp)
+        CoverThumb(track.artUri, 52.dp, corner = 14.dp)
         Column(
             Modifier
                 .weight(1f)
@@ -94,18 +93,19 @@ fun TrackRow(
             Text(
                 track.artist,
                 style = MaterialTheme.typography.bodyMedium,
-                color = Color.White.copy(alpha = 0.65f),
+                color = Color.White.copy(alpha = 0.60f),
                 maxLines = 1,
                 overflow = TextOverflow.Ellipsis,
             )
         }
         if (isCurrent) {
-            Icon(Icons.Rounded.GraphicEq, "Sonando", tint = Color.White, modifier = Modifier.size(22.dp))
+            EqBars(active = playing, modifier = Modifier.padding(end = 6.dp))
         } else if (trailing == null && track.durationMs > 0) {
             Text(
                 formatTime(track.durationMs),
                 style = MaterialTheme.typography.labelSmall,
-                color = Color.White.copy(alpha = 0.55f),
+                color = Color.White.copy(alpha = 0.50f),
+                modifier = Modifier.padding(end = 6.dp),
             )
         }
         if (trailing != null) {
