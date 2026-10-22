@@ -39,12 +39,13 @@ import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.example.glassplayer.ui.theme.Frost
 
 data class DockItem(val icon: ImageVector, val label: String)
 
 /**
  * Dock flotante de navegacion (adaptacion movil de la barra lateral de la referencia):
- * capsula de vidrio negro; el elemento activo se expande en una "pildora" con icono + texto,
+ * capsula de cristal esmerilado; el elemento activo se expande en una "pildora" con icono + texto,
  * borde degradado y un halo de luz. Los cambios se animan con resorte.
  */
 @Composable
@@ -59,8 +60,8 @@ fun GlassDock(
     val shape = RoundedCornerShape(50)
     Row(
         modifier
-            .shadow(24.dp, shape, ambientColor = Color.Black, spotColor = Color.Black)
-            .glass(shape, strength = 1.6f, darkness = 0.62f, backdrop = backdrop)
+            .shadow(22.dp, shape, ambientColor = Frost.Tint, spotColor = Frost.Tint)
+            .glass(shape, strength = 1.5f, darkness = 0.18f, backdrop = backdrop)
             .padding(6.dp)
             .animateContentSize(spring(dampingRatio = Spring.DampingRatioLowBouncy, stiffness = Spring.StiffnessMediumLow)),
         horizontalArrangement = Arrangement.spacedBy(4.dp),
@@ -82,7 +83,7 @@ private fun DockButton(item: DockItem, selected: Boolean, badge: Int, onClick: (
     val shape = RoundedCornerShape(50)
     val sel by animateFloatAsState(if (selected) 1f else 0f, tween(320), label = "dockSel")
     val tint by animateColorAsState(
-        if (selected) Color.White else Color.White.copy(alpha = 0.55f), tween(250), label = "dockTint",
+        if (selected) Color.White else Color.White.copy(alpha = 0.78f), tween(250), label = "dockTint",
     )
 
     Box(
@@ -94,14 +95,14 @@ private fun DockButton(item: DockItem, selected: Boolean, badge: Int, onClick: (
                 if (sel > 0.01f) {
                     // Relleno suave
                     drawRoundRect(
-                        brush = Brush.verticalGradient(listOf(Color.White.copy(alpha = 0.16f), Color.White.copy(alpha = 0.05f))),
+                        brush = Brush.verticalGradient(listOf(Color.White.copy(alpha = 0.42f), Color.White.copy(alpha = 0.20f))),
                         cornerRadius = CornerRadius(size.height / 2f),
                         alpha = sel,
                     )
                     // Halo de luz inferior
                     drawCircle(
                         brush = Brush.radialGradient(
-                            listOf(Color.White.copy(alpha = 0.22f), Color.Transparent),
+                            listOf(Color.White.copy(alpha = 0.40f), Color.Transparent),
                             center = Offset(size.width / 2f, size.height),
                             radius = size.width * 0.7f,
                         ),
@@ -112,7 +113,7 @@ private fun DockButton(item: DockItem, selected: Boolean, badge: Int, onClick: (
                     // Borde con degradado
                     drawRoundRect(
                         brush = Brush.linearGradient(
-                            listOf(Color.White.copy(alpha = 0.85f), Color.White.copy(alpha = 0.06f), Color.White.copy(alpha = 0.45f)),
+                            listOf(Color.White.copy(alpha = 0.95f), Color.White.copy(alpha = 0.12f), Color.White.copy(alpha = 0.65f)),
                             start = Offset.Zero,
                             end = Offset(size.width, size.height),
                         ),
@@ -154,7 +155,7 @@ private fun DockButton(item: DockItem, selected: Boolean, badge: Int, onClick: (
             ) {
                 Text(
                     text = if (badge > 9) "9+" else badge.toString(),
-                    color = Color.Black,
+                    color = Frost.Tint,
                     fontSize = 9.sp,
                     fontWeight = FontWeight.Bold,
                 )

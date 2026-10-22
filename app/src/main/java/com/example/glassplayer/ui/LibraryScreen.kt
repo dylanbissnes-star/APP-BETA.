@@ -1,27 +1,28 @@
 package com.example.glassplayer.ui
 
-import androidx.compose.animation.animateContentSize
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.LazyRow
-import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.rounded.PlaylistAdd
 import androidx.compose.material.icons.rounded.Close
+import androidx.compose.material.icons.rounded.Cloud
 import androidx.compose.material.icons.rounded.CreateNewFolder
 import androidx.compose.material.icons.rounded.Folder
+import androidx.compose.material.icons.rounded.LibraryMusic
+import androidx.compose.material.icons.rounded.PhoneAndroid
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
@@ -38,29 +39,41 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import androidx.compose.ui.platform.LocalHapticFeedback
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import com.example.glassplayer.PlayerUiState
 import com.example.glassplayer.data.SOURCE_ALL
 import com.example.glassplayer.data.SOURCE_DEMO
 import com.example.glassplayer.data.SOURCE_DEVICE
 import com.example.glassplayer.data.Track
-import com.example.glassplayer.ui.components.BlackGlassButton
-import com.example.glassplayer.ui.components.BlackGlassPill
+import com.example.glassplayer.ui.components.GlassButton
+import com.example.glassplayer.ui.components.GlassPill
 import com.example.glassplayer.ui.components.ScreenHeader
 import com.example.glassplayer.ui.components.TrackRow
-import com.example.glassplayer.ui.components.blackGlass
 import com.example.glassplayer.ui.components.glass
+import com.example.glassplayer.ui.components.glassStrong
 import com.example.glassplayer.ui.components.pressClick
+import com.example.glassplayer.ui.theme.Frost
+
+private data class SourceItem(
+    val key: String,
+    val label: String,
+    val count: Int,
+    val icon: ImageVector,
+    val folder: Boolean,
+)
 
 /**
- * Pantalla "Biblioteca": listado completo de canciones.
- *  - Chips para filtrar por origen (todas, dispositivo o cada carpeta agregada).
- *  - Toca una cancion para reproducirla.
- *  - Desliza una cancion a la IZQUIERDA para agregarla a la cola de reproduccion.
+ * Pantalla "Biblioteca" (estilo de la referencia: "For You" + "You Might Like"):
+ *  - rejilla de tarjetas pequenas con las fuentes (todas, dispositivo, demo y cada carpeta agregada)
+ *  - lista de canciones con triangulo de reproducir
+ *  - desliza una cancion a la IZQUIERDA para agregarla a la cola de reproduccion
  */
 @Composable
 fun LibraryScreen(
@@ -76,68 +89,64 @@ fun LibraryScreen(
         if (state.selectedSource == SOURCE_ALL) state.library
         else state.library.filter { it.sourceId == state.selectedSource }
     }
-    val counts = remember(state.library) { state.library.groupingBy { it.sourceId }.eachCount() }
+    val sources = remember(state.library, state.folders) {
+        val counts = state.library.groupingBy { it.sourceId }.eachCount()
+        buildList {
+            add(SourceItem(SOURCE_ALL, "Todas", state.library.size, Icons.Rounded.LibraryMusic, false))
+            val device = counts[SOURCE_DEVICE] ?: 0
+            if (device > 0) add(SourceItem(SOURCE_DEVICE, "Dispositivo", device, Icons.Rounded.PhoneAndroid, false))
+            val demo = counts[SOURCE_DEMO] ?: 0
+            if (demo > 0) add(SourceItem(SOURCE_DEMO, "Demo", demo, Icons.Rounded.Cloud, false))
+            state.folders.forEach { add(SourceItem(it.uri, it.name, counts[it.uri] ?: 0, Icons.Rounded.Folder, true)) }
+        }
+    }
     val currentId = state.current?.id
 
-    Column(
-        modifier
-            .fillMaxSize()
-            .statusBarsPadding()
-    ) {
+    Column(modifier.fillMaxSize()) {
         ScreenHeader(
             title = "Biblioteca",
             subtitle = "${visible.size} canciones",
             trailing = {
-                BlackGlassButton(Icons.Rounded.CreateNewFolder, "Agregar carpeta", onAddFolder)
+                GlassButton(Icons.Rounded.CreateNewFolder, "Agregar carpeta", onAddFolder)
             },
         )
 
-        // Filtros por origen
-        LazyRow(
-            contentPadding = PaddingValues(horizontal = 16.dp, vertical = 14.dp),
-            horizontalArrangement = Arrangement.spacedBy(8.dp),
+        LazyColumn(
+            // Espacio inferior para que el mini reproductor y el dock no tapen la ultima fila
+            contentPadding = PaddingValues(start = 16.dp, end = 16.dp, top = 6.dp, bottom = 176.dp),
+            verticalArrangement = Arrangement.spacedBy(10.dp),
         ) {
-            item(key = SOURCE_ALL) {
-                SourceChip("Todas · ${state.library.size}", state.selectedSource == SOURCE_ALL, { onSelectSource(SOURCE_ALL) })
-            }
-            val deviceCount = counts[SOURCE_DEVICE] ?: 0
-            if (deviceCount > 0) {
-                item(key = SOURCE_DEVICE) {
-                    SourceChip("Dispositivo · $deviceCount", state.selectedSource == SOURCE_DEVICE, { onSelectSource(SOURCE_DEVICE) })
+            item(key = "h-sources") { SectionTitle("Tus fuentes") }
+            item(key = "sources") {
+                Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                    sources.chunked(2).forEach { pair ->
+                        Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                            pair.forEach { item ->
+                                val selected = state.selectedSource == item.key
+                                SourceChip(
+                                    item = item,
+                                    selected = selected,
+                                    onClick = { onSelectSource(item.key) },
+                                    onRemove = if (selected && item.folder) ({ onRemoveFolder(item.key) }) else null,
+                                    modifier = Modifier.weight(1f),
+                                )
+                            }
+                            if (pair.size == 1) Spacer(Modifier.weight(1f))
+                        }
+                    }
                 }
             }
-            if ((counts[SOURCE_DEMO] ?: 0) > 0) {
-                item(key = SOURCE_DEMO) {
-                    SourceChip("Demo · ${counts[SOURCE_DEMO]}", state.selectedSource == SOURCE_DEMO, { onSelectSource(SOURCE_DEMO) })
-                }
-            }
-            items(state.folders, key = { it.uri }) { folder ->
-                val selected = state.selectedSource == folder.uri
-                SourceChip(
-                    label = "${folder.name} · ${counts[folder.uri] ?: 0}",
-                    selected = selected,
-                    onClick = { onSelectSource(folder.uri) },
-                    folder = true,
-                    onRemove = if (selected) ({ onRemoveFolder(folder.uri) }) else null,
+
+            item(key = "h-songs") {
+                SectionTitle(
+                    "Canciones · ${visible.size}",
+                    hint = "Desliza una canción a la izquierda para añadirla a la cola",
                 )
             }
-        }
 
-        Text(
-            "Desliza una canción a la izquierda para añadirla a la cola",
-            style = MaterialTheme.typography.labelSmall,
-            color = Color.White.copy(alpha = 0.45f),
-            modifier = Modifier.padding(start = 20.dp, end = 20.dp, bottom = 8.dp),
-        )
-
-        if (visible.isEmpty()) {
-            EmptyLibrary(scanning = state.scanning, onAddFolder = onAddFolder)
-        } else {
-            LazyColumn(
-                // Espacio inferior para que el dock flotante no tape la ultima fila
-                contentPadding = PaddingValues(start = 16.dp, end = 16.dp, top = 4.dp, bottom = 120.dp),
-                verticalArrangement = Arrangement.spacedBy(10.dp),
-            ) {
+            if (visible.isEmpty()) {
+                item(key = "empty") { EmptyLibrary(scanning = state.scanning, onAddFolder = onAddFolder) }
+            } else {
                 itemsIndexed(visible, key = { _, t -> t.id }) { index, track ->
                     SwipeableTrackRow(
                         track = track,
@@ -149,6 +158,16 @@ fun LibraryScreen(
                     )
                 }
             }
+        }
+    }
+}
+
+@Composable
+private fun SectionTitle(title: String, hint: String? = null) {
+    Column(Modifier.padding(start = 4.dp, top = 8.dp)) {
+        Text(title, color = Color.White, fontSize = 18.sp, fontWeight = FontWeight.SemiBold)
+        if (hint != null) {
+            Text(hint, style = MaterialTheme.typography.labelSmall, color = Frost.TextSecondary)
         }
     }
 }
@@ -195,7 +214,7 @@ private fun SwipeableTrackRow(
                         color = Color.White,
                         modifier = Modifier.padding(end = 10.dp),
                     )
-                    BlackGlassButton(Icons.AutoMirrored.Rounded.PlaylistAdd, "Añadir a la cola", {}, size = 40.dp, active = true)
+                    GlassButton(Icons.AutoMirrored.Rounded.PlaylistAdd, "Añadir a la cola", {}, size = 40.dp, active = true)
                 }
             }
         },
@@ -204,45 +223,62 @@ private fun SwipeableTrackRow(
     }
 }
 
+/** Tarjeta pequena de fuente (icono + nombre + cantidad), como los mosaicos de "For You". */
 @Composable
 private fun SourceChip(
-    label: String,
+    item: SourceItem,
     selected: Boolean,
     onClick: () -> Unit,
-    folder: Boolean = false,
-    onRemove: (() -> Unit)? = null,
+    onRemove: (() -> Unit)?,
+    modifier: Modifier = Modifier,
 ) {
-    val shape = RoundedCornerShape(50)
+    val shape = RoundedCornerShape(16.dp)
     Row(
-        Modifier
-            .pressClick(onClick, pressedScale = 0.94f)
-            .then(if (selected) Modifier.blackGlass(shape) else Modifier.glass(shape, strength = 0.8f))
-            .animateContentSize()
-            .padding(start = 14.dp, end = if (onRemove != null) 6.dp else 14.dp, top = 8.dp, bottom = 8.dp),
+        modifier
+            .pressClick(onClick, pressedScale = 0.95f)
+            .then(if (selected) Modifier.glassStrong(shape) else Modifier.glass(shape, strength = 0.9f, darkness = 0.04f))
+            .padding(6.dp),
         verticalAlignment = Alignment.CenterVertically,
     ) {
-        if (folder) {
-            Icon(Icons.Rounded.Folder, null, tint = Color.White.copy(alpha = 0.8f), modifier = Modifier.size(16.dp))
-            Box(Modifier.size(6.dp))
+        Box(
+            Modifier
+                .size(34.dp)
+                .clip(RoundedCornerShape(11.dp))
+                .background(Color.White.copy(alpha = 0.26f)),
+            contentAlignment = Alignment.Center,
+        ) {
+            Icon(item.icon, null, tint = Color.White, modifier = Modifier.size(19.dp))
         }
-        Text(
-            label,
-            style = MaterialTheme.typography.bodyMedium,
-            color = Color.White,
-            maxLines = 1,
-            overflow = TextOverflow.Ellipsis,
-        )
+        Column(
+            Modifier
+                .weight(1f)
+                .padding(horizontal = 9.dp)
+        ) {
+            Text(
+                item.label,
+                fontSize = 13.sp,
+                fontWeight = FontWeight.Medium,
+                color = Color.White,
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis,
+            )
+            Text(
+                "${item.count} canciones",
+                style = MaterialTheme.typography.labelSmall,
+                color = Frost.TextSecondary,
+                maxLines = 1,
+            )
+        }
         if (onRemove != null) {
-            Box(Modifier.size(6.dp))
             Box(
                 Modifier
-                    .size(22.dp)
+                    .size(26.dp)
                     .pressClick(onRemove)
                     .clip(CircleShape)
-                    .background(Color.White.copy(alpha = 0.15f)),
+                    .background(Color.White.copy(alpha = 0.28f)),
                 contentAlignment = Alignment.Center,
             ) {
-                Icon(Icons.Rounded.Close, "Quitar carpeta", tint = Color.White, modifier = Modifier.size(14.dp))
+                Icon(Icons.Rounded.Close, "Quitar carpeta", tint = Color.White, modifier = Modifier.size(15.dp))
             }
         }
     }
@@ -252,17 +288,16 @@ private fun SourceChip(
 private fun EmptyLibrary(scanning: Boolean, onAddFolder: () -> Unit) {
     Column(
         Modifier
-            .fillMaxSize()
-            .padding(32.dp),
+            .fillMaxWidth()
+            .padding(horizontal = 16.dp, vertical = 36.dp),
         horizontalAlignment = Alignment.CenterHorizontally,
-        verticalArrangement = Arrangement.Center,
     ) {
         if (scanning) {
             CircularProgressIndicator(color = Color.White)
             Text(
                 "Buscando música…",
                 style = MaterialTheme.typography.bodyMedium,
-                color = Color.White.copy(alpha = 0.7f),
+                color = Frost.TextSecondary,
                 modifier = Modifier.padding(top = 16.dp),
             )
         } else {
@@ -275,11 +310,11 @@ private fun EmptyLibrary(scanning: Boolean, onAddFolder: () -> Unit) {
             Text(
                 "Agrega una carpeta de tu teléfono para traer su música.",
                 style = MaterialTheme.typography.bodyMedium,
-                color = Color.White.copy(alpha = 0.65f),
+                color = Frost.TextSecondary,
                 textAlign = TextAlign.Center,
                 modifier = Modifier.padding(top = 6.dp, bottom = 20.dp),
             )
-            BlackGlassPill("Agregar carpeta", onAddFolder, icon = Icons.Rounded.CreateNewFolder)
+            GlassPill("Agregar carpeta", onAddFolder, icon = Icons.Rounded.CreateNewFolder)
         }
     }
 }

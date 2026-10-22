@@ -21,7 +21,7 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.glassplayer.data.Track
-import com.example.glassplayer.ui.theme.BlackGlass
+import com.example.glassplayer.ui.theme.Frost
 
 /** Titulo, artista y album debajo de la portada central; cambia con un fundido y subida suave. */
 @Composable
@@ -44,7 +44,7 @@ fun NowPlayingInfo(track: Track?, modifier: Modifier = Modifier) {
         ) {
             Text(
                 t?.title ?: "—",
-                color = BlackGlass.TextPrimary,
+                color = Frost.TextPrimary,
                 fontSize = 22.sp,
                 fontWeight = FontWeight.SemiBold,
                 maxLines = 1,
@@ -53,7 +53,7 @@ fun NowPlayingInfo(track: Track?, modifier: Modifier = Modifier) {
             )
             Text(
                 t?.artist ?: "",
-                color = BlackGlass.TextSecondary,
+                color = Frost.TextSecondary,
                 fontSize = 15.sp,
                 maxLines = 1,
                 overflow = TextOverflow.Ellipsis,
@@ -63,7 +63,7 @@ fun NowPlayingInfo(track: Track?, modifier: Modifier = Modifier) {
             if (!t?.album.isNullOrBlank()) {
                 Text(
                     t?.album.orEmpty(),
-                    color = Color.White.copy(alpha = 0.38f),
+                    color = Frost.TextTertiary,
                     fontSize = 12.sp,
                     maxLines = 1,
                     overflow = TextOverflow.Ellipsis,

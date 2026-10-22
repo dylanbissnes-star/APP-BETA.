@@ -34,15 +34,16 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.example.glassplayer.ui.theme.Frost
 
 /**
- * Boton circular flotante: vidrio negro con borde degradado.
+ * Boton circular de cristal luminoso con borde degradado.
  *  - se encoge al presionar y rebota (resorte)
  *  - el icono cambia con fundido suave
  *  - `active` enciende un halo de luz; `pulse` lo hace "respirar" (p. ej. mientras suena)
  */
 @Composable
-fun BlackGlassButton(
+fun GlassButton(
     icon: ImageVector,
     description: String,
     onClick: () -> Unit,
@@ -70,7 +71,7 @@ fun BlackGlassButton(
         modifier
             .size(size)
             .drawBehind {
-                val a = maxOf(glow * 0.22f, breathing)
+                val a = maxOf(glow * 0.30f, breathing)
                 if (a > 0.005f) {
                     val r = this.size.minDimension * 0.95f
                     drawCircle(
@@ -89,8 +90,8 @@ fun BlackGlassButton(
             Modifier
                 .matchParentSize()
                 .pressClick(onClick)
-                .shadow(12.dp, CircleShape, ambientColor = Color.Black, spotColor = Color.Black)
-                .blackGlass(CircleShape),
+                .shadow(10.dp, CircleShape, ambientColor = Frost.Tint, spotColor = Frost.Tint)
+                .glassStrong(CircleShape, boost = glow * 0.12f),
             contentAlignment = Alignment.Center,
         ) {
             Crossfade(targetState = icon, animationSpec = tween(220), label = "icon") { current ->
@@ -98,29 +99,58 @@ fun BlackGlassButton(
             }
         }
         if (badge > 0) {
-            Box(
-                Modifier
-                    .align(Alignment.TopEnd)
-                    .offset(x = 4.dp, y = (-4).dp)
-                    .size(20.dp)
-                    .clip(CircleShape)
-                    .background(Color.White),
-                contentAlignment = Alignment.Center,
-            ) {
-                Text(
-                    text = if (badge > 99) "99+" else badge.toString(),
-                    color = Color.Black,
-                    fontSize = 10.sp,
-                    fontWeight = FontWeight.Bold,
-                )
-            }
+            CountBadge(badge, Modifier.align(Alignment.TopEnd).offset(x = 4.dp, y = (-4).dp))
         }
+    }
+}
+
+/** Icono sin fondo (como los controles de la referencia): solo el simbolo blanco con rebote al tocar. */
+@Composable
+fun PlainIconButton(
+    icon: ImageVector,
+    description: String,
+    onClick: () -> Unit,
+    modifier: Modifier = Modifier,
+    size: Dp = 44.dp,
+    iconSize: Dp = 24.dp,
+    tint: Color = Color.White,
+) {
+    val iconTint by animateColorAsState(tint, tween(250), label = "plainTint")
+    Box(
+        modifier
+            .size(size)
+            .pressClick(onClick, pressedScale = 0.86f)
+            .clip(CircleShape),
+        contentAlignment = Alignment.Center,
+    ) {
+        Crossfade(targetState = icon, animationSpec = tween(200), label = "plainIcon") { current ->
+            Icon(current, description, tint = iconTint, modifier = Modifier.size(iconSize))
+        }
+    }
+}
+
+/** Circulito blanco con un numero (cola, avisos). */
+@Composable
+fun CountBadge(count: Int, modifier: Modifier = Modifier) {
+    Box(
+        modifier
+            .size(18.dp)
+            .clip(CircleShape)
+            .background(Color.White),
+        contentAlignment = Alignment.Center,
+    ) {
+        Text(
+            text = if (count > 9) "9+" else count.toString(),
+            color = Frost.Tint,
+            fontSize = 10.sp,
+            fontWeight = FontWeight.Bold,
+        )
     }
 }
 
 /** Boton alargado (texto + icono opcional) con el mismo estilo. */
 @Composable
-fun BlackGlassPill(
+fun GlassPill(
     text: String,
     onClick: () -> Unit,
     modifier: Modifier = Modifier,
@@ -130,8 +160,8 @@ fun BlackGlassPill(
     Row(
         modifier
             .pressClick(onClick, pressedScale = 0.94f)
-            .shadow(10.dp, shape, ambientColor = Color.Black, spotColor = Color.Black)
-            .blackGlass(shape)
+            .shadow(10.dp, shape, ambientColor = Frost.Tint, spotColor = Frost.Tint)
+            .glassStrong(shape)
             .padding(horizontal = 16.dp, vertical = 10.dp),
         verticalAlignment = Alignment.CenterVertically,
     ) {
@@ -143,20 +173,20 @@ fun BlackGlassPill(
     }
 }
 
-/** Insignia con borde fino (como el "3" de la referencia). */
+/** Insignia con borde fino. */
 @Composable
 fun OutlineBadge(text: String, modifier: Modifier = Modifier) {
     val shape = RoundedCornerShape(50)
     Box(
         modifier
-            .glass(shape, strength = 0.7f)
+            .glass(shape, strength = 0.9f)
             .padding(horizontal = 10.dp, vertical = 4.dp),
         contentAlignment = Alignment.Center,
     ) {
         Text(
             text,
             style = MaterialTheme.typography.labelSmall,
-            color = Color.White.copy(alpha = 0.85f),
+            color = Color.White.copy(alpha = 0.9f),
         )
     }
 }

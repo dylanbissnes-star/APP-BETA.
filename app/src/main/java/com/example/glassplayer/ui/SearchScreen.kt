@@ -6,7 +6,6 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.material3.MaterialTheme
@@ -26,7 +25,7 @@ import com.example.glassplayer.data.Track
 import com.example.glassplayer.ui.components.GlassSearchField
 import com.example.glassplayer.ui.components.ScreenHeader
 import com.example.glassplayer.ui.components.TrackRow
-import com.example.glassplayer.ui.theme.BlackGlass
+import com.example.glassplayer.ui.theme.Frost
 import java.text.Normalizer
 
 /** Pantalla "Buscar": busca por titulo, artista o album (sin distinguir mayusculas ni acentos). */
@@ -49,9 +48,7 @@ fun SearchScreen(
     val currentId = state.current?.id
 
     Column(
-        modifier
-            .fillMaxSize()
-            .statusBarsPadding()
+        modifier.fillMaxSize()
     ) {
         ScreenHeader(
             title = "Buscar",
@@ -67,7 +64,7 @@ fun SearchScreen(
             query.isBlank() -> Hint("Escribe para buscar en tu música")
             results.isEmpty() -> Hint("Sin resultados para «${query.trim()}»")
             else -> LazyColumn(
-                contentPadding = PaddingValues(start = 16.dp, end = 16.dp, top = 4.dp, bottom = 120.dp),
+                contentPadding = PaddingValues(start = 16.dp, end = 16.dp, top = 4.dp, bottom = 176.dp),
                 verticalArrangement = Arrangement.spacedBy(10.dp),
             ) {
                 itemsIndexed(results, key = { _, t -> t.id }) { index, track ->
@@ -89,7 +86,7 @@ private fun Hint(text: String) {
         Text(
             text,
             style = MaterialTheme.typography.bodyMedium,
-            color = BlackGlass.TextSecondary,
+            color = Frost.TextSecondary,
             textAlign = TextAlign.Center,
             modifier = Modifier.padding(top = 40.dp),
         )

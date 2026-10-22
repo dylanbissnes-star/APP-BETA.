@@ -50,12 +50,14 @@ fun ThinSlider(
     modifier: Modifier = Modifier,
     live: Boolean = false,
     onDragging: (Boolean) -> Unit = {},
+    fill: Color = Color.White.copy(alpha = 0.92f),
+    track: Color = Color.White.copy(alpha = 0.30f),
 ) {
     val latestChange by rememberUpdatedState(onValueChange)
     val latestDragging by rememberUpdatedState(onDragging)
     var drag by remember { mutableStateOf<Float?>(null) }
     val shown = (drag ?: value).coerceIn(0f, 1f)
-    val thumb by animateDpAsState(if (drag != null) 12.dp else 0.dp, tween(160), label = "thumb")
+    val thumb by animateDpAsState(if (drag != null) 16.dp else 12.dp, tween(160), label = "thumb")
 
     BoxWithConstraints(
         modifier
@@ -96,14 +98,14 @@ fun ThinSlider(
                 .fillMaxWidth()
                 .height(3.dp)
                 .clip(CircleShape)
-                .background(Color.White.copy(alpha = 0.16f))
+                .background(track)
         )
         Box(
             Modifier
                 .fillMaxWidth(shown)
                 .height(3.dp)
                 .clip(CircleShape)
-                .background(Color.White.copy(alpha = 0.92f))
+                .background(fill)
         )
         Box(
             Modifier

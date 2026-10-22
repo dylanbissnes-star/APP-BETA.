@@ -32,14 +32,15 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.zIndex
 import coil.compose.AsyncImage
 import com.example.glassplayer.data.Track
+import com.example.glassplayer.ui.theme.Frost
 import kotlin.math.abs
 
-private val CardWidth = 226.dp
+private val CardWidth = 236.dp
 
 /**
  * Carrusel con profundidad 3D: la portada activa va al centro, nitida y a tamano completo;
  * las vecinas quedan parcialmente detras, mas pequenas, mas tenues y desenfocadas (Android 12+).
- * Las portadas conservan sus colores; todo lo demas es monocromatico.
+ * Marco de cristal claro; las portadas conservan sus colores.
  */
 @Composable
 fun CoverCarousel(
@@ -88,25 +89,26 @@ fun CoverCarousel(
 /** Tarjeta de cristal que enmarca solo la portada; el texto va debajo del carrusel. */
 @Composable
 private fun CoverCard(track: Track, modifier: Modifier = Modifier) {
-    val shape = RoundedCornerShape(32.dp)
+    // Marco de cristal claro alrededor de la portada (como la portada de la referencia)
+    val shape = RoundedCornerShape(26.dp)
     Box(
         modifier = modifier
             .width(CardWidth)
-            .shadow(26.dp, shape, ambientColor = Color.Black, spotColor = Color.Black)
-            .glass(shape, darkness = 0.35f)
+            .shadow(22.dp, shape, ambientColor = Frost.Tint, spotColor = Frost.Tint)
+            .glass(shape, strength = 1.9f, darkness = 0.04f)
             .padding(8.dp),
     ) {
         Box(
             Modifier
                 .fillMaxWidth()
                 .aspectRatio(1f)
-                .clip(RoundedCornerShape(25.dp))
-                .background(Brush.linearGradient(listOf(Color(0xFF2A2A2A), Color(0xFF0C0C0C)))),
+                .clip(RoundedCornerShape(19.dp))
+                .background(Brush.linearGradient(listOf(Color(0xFFB69CFF), Color(0xFF6C7BFF)))),
             contentAlignment = Alignment.Center,
         ) {
             Icon(
                 Icons.Rounded.MusicNote, null,
-                tint = Color.White.copy(alpha = 0.40f),
+                tint = Color.White.copy(alpha = 0.80f),
                 modifier = Modifier.size(56.dp),
             )
             if (track.artUri != null) {
