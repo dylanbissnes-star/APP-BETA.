@@ -1,18 +1,20 @@
 package com.example.glassplayer.ui.components
 
-import androidx.compose.foundation.background
-import androidx.compose.foundation.gestures.detectHorizontalDragGestures
-import androidx.compose.foundation.gestures.detectTapGestures
+import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.core.tween
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.slideInVertically
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.rounded.QueueMusic
 import androidx.compose.material.icons.rounded.Pause
 import androidx.compose.material.icons.rounded.PlayArrow
 import androidx.compose.material.icons.rounded.Repeat
@@ -20,9 +22,12 @@ import androidx.compose.material.icons.rounded.RepeatOne
 import androidx.compose.material.icons.rounded.Shuffle
 import androidx.compose.material.icons.rounded.SkipNext
 import androidx.compose.material.icons.rounded.SkipPrevious
+import androidx.compose.material.icons.rounded.Speaker
+import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -31,16 +36,18 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.input.pointer.pointerInput
-import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.unit.dp
 import androidx.media3.common.Player
 import com.example.glassplayer.PlayerUiState
+import com.example.glassplayer.ui.theme.BlackGlass
 
 /**
- * Parte baja del reproductor:
- *  - capsula de cristal con la cancion actual y la barra de progreso (toca o arrastra)
- *  - fila de botones flotantes negros: aleatorio, anterior, play/pausa, siguiente, repetir
+ * Panel flotante de reproduccion (cristal negro):
+ *  - progreso fino con tiempos
+ *  - aleatorio / anterior / play-pausa / siguiente / repetir (botones circulares negros)
+ *  - volumen, dispositivos de audio y cola
+ * Entra con un fundido y un ligero deslizamiento.
  */
 @Composable
 fun GlassControlBar(
@@ -51,132 +58,96 @@ fun GlassControlBar(
     onSeek: (Float) -> Unit,
     onShuffle: () -> Unit,
     onRepeat: () -> Unit,
+    onOpenQueue: () -> Unit,
+    onOpenDevices: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
-    Column(
-        modifier.fillMaxWidth(),
-        verticalArrangement = Arrangement.spacedBy(18.dp),
-        horizontalAlignment = Alignment.CenterHorizontally,
-    ) {
-        NowPlayingCapsule(state, onSeek)
+    var shown by remember { mutableStateOf(false) }
+    LaunchedEffect(Unit) { shown = true }
 
-        Row(
-            Modifier
+    AnimatedVisibility(
+        visible = shown,
+        enter = fadeIn(tween(600)) + slideInVertically(tween(600)) { it / 6 },
+    ) {
+        Column(
+            modifier
                 .fillMaxWidth()
-                .padding(horizontal = 4.dp),
-            horizontalArrangement = Arrangement.SpaceBetween,
-            verticalAlignment = Alignment.CenterVertically,
+                .glass(RoundedCornerShape(32.dp), darkness = 0.55f)
+                .padding(horizontal = 18.dp, vertical = 14.dp),
+            verticalArrangement = Arrangement.spacedBy(8.dp),
         ) {
-            BlackGlassButton(
-                Icons.Rounded.Shuffle, "Aleatorio", onShuffle,
-                size = 44.dp,
-                active = state.shuffle,
-                tint = if (state.shuffle) Color.White else Color.White.copy(alpha = 0.45f),
-            )
-            BlackGlassButton(Icons.Rounded.SkipPrevious, "Anterior", onPrevious, size = 54.dp)
-            BlackGlassButton(
-                if (state.isPlaying) Icons.Rounded.Pause else Icons.Rounded.PlayArrow,
-                if (state.isPlaying) "Pausar" else "Reproducir",
-                onTogglePlay,
-                size = 70.dp,
-                iconSize = 36.dp,
-                pulse = state.isPlaying,
-            )
-            BlackGlassButton(Icons.Rounded.SkipNext, "Siguiente", onNext, size = 54.dp)
-            BlackGlassButton(
-                if (state.repeatMode == Player.REPEAT_MODE_ONE) Icons.Rounded.RepeatOne else Icons.Rounded.Repeat,
-                "Repetir", onRepeat,
-                size = 44.dp,
-                active = state.repeatMode != Player.REPEAT_MODE_OFF,
-                tint = if (state.repeatMode != Player.REPEAT_MODE_OFF) Color.White else Color.White.copy(alpha = 0.45f),
-            )
-        }
-    }
-}
+            // Progreso
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Text(
+                    formatTime(state.positionMs),
+                    style = MaterialTheme.typography.labelSmall,
+                    color = BlackGlass.TextSecondary,
+                )
+                ThinSlider(
+                    value = state.progress,
+                    onValueChange = onSeek,
+                    modifier = Modifier
+                        .weight(1f)
+                        .padding(horizontal = 10.dp),
+                )
+                Text(
+                    formatTime(state.durationMs),
+                    style = MaterialTheme.typography.labelSmall,
+                    color = BlackGlass.TextSecondary,
+                )
+            }
 
-@Composable
-private fun NowPlayingCapsule(state: PlayerUiState, onSeek: (Float) -> Unit) {
-    val track = state.current
-    Column(
-        Modifier
-            .fillMaxWidth()
-            .glass(RoundedCornerShape(28.dp))
-            .padding(start = 12.dp, end = 12.dp, top = 12.dp, bottom = 8.dp)
-    ) {
-        Row(verticalAlignment = Alignment.CenterVertically) {
-            CoverThumb(track?.artUri, 48.dp)
-            Column(
-                Modifier
-                    .weight(1f)
-                    .padding(start = 12.dp)
+            // Transporte
+            Row(
+                Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically,
             ) {
-                Text(
-                    track?.title ?: "—",
-                    style = MaterialTheme.typography.titleMedium,
-                    color = Color.White,
-                    maxLines = 1,
-                    overflow = TextOverflow.Ellipsis,
+                BlackGlassButton(
+                    Icons.Rounded.Shuffle, "Aleatorio", onShuffle,
+                    size = 40.dp,
+                    active = state.shuffle,
+                    tint = if (state.shuffle) Color.White else Color.White.copy(alpha = 0.45f),
                 )
-                Text(
-                    track?.artist ?: "",
-                    style = MaterialTheme.typography.bodyMedium,
-                    color = Color.White.copy(alpha = 0.60f),
-                    maxLines = 1,
-                    overflow = TextOverflow.Ellipsis,
+                BlackGlassButton(Icons.Rounded.SkipPrevious, "Anterior", onPrevious, size = 52.dp)
+                BlackGlassButton(
+                    if (state.isPlaying) Icons.Rounded.Pause else Icons.Rounded.PlayArrow,
+                    if (state.isPlaying) "Pausar" else "Reproducir",
+                    onTogglePlay,
+                    size = 64.dp,
+                    iconSize = 32.dp,
+                    pulse = state.isPlaying,
+                )
+                BlackGlassButton(Icons.Rounded.SkipNext, "Siguiente", onNext, size = 52.dp)
+                BlackGlassButton(
+                    if (state.repeatMode == Player.REPEAT_MODE_ONE) Icons.Rounded.RepeatOne else Icons.Rounded.Repeat,
+                    "Repetir", onRepeat,
+                    size = 40.dp,
+                    active = state.repeatMode != Player.REPEAT_MODE_OFF,
+                    tint = if (state.repeatMode != Player.REPEAT_MODE_OFF) Color.White else Color.White.copy(alpha = 0.45f),
                 )
             }
-            EqBars(active = state.isPlaying, modifier = Modifier.padding(end = 4.dp))
-        }
-        SeekBar(state.progress, onSeek, Modifier.padding(top = 6.dp))
-        Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
-            Text(formatTime(state.positionMs), style = MaterialTheme.typography.labelSmall, color = Color.White.copy(alpha = 0.55f))
-            Text(formatTime(state.durationMs), style = MaterialTheme.typography.labelSmall, color = Color.White.copy(alpha = 0.55f))
+
+            // Volumen, dispositivos y cola
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                VolumeControl(Modifier.weight(1f))
+                GhostIconButton(Icons.Rounded.Speaker, "Dispositivos de audio", onOpenDevices)
+                GhostIconButton(Icons.AutoMirrored.Rounded.QueueMusic, "Cola de reproducción", onOpenQueue)
+            }
         }
     }
 }
 
-/** Barra de progreso: toca para saltar o arrastra para buscar. */
+/** Icono lineal sin fondo (controles secundarios). */
 @Composable
-private fun SeekBar(progress: Float, onSeek: (Float) -> Unit, modifier: Modifier = Modifier) {
-    var drag by remember { mutableStateOf<Float?>(null) }
-    val shown = drag ?: progress
-
+private fun GhostIconButton(icon: ImageVector, description: String, onClick: () -> Unit) {
     Box(
-        modifier
-            .fillMaxWidth()
-            .height(22.dp)
-            .pointerInput(Unit) {
-                detectTapGestures { offset -> onSeek((offset.x / size.width).coerceIn(0f, 1f)) }
-            }
-            .pointerInput(Unit) {
-                detectHorizontalDragGestures(
-                    onDragStart = { offset -> drag = (offset.x / size.width).coerceIn(0f, 1f) },
-                    onDragEnd = {
-                        drag?.let(onSeek)
-                        drag = null
-                    },
-                    onDragCancel = { drag = null },
-                    onHorizontalDrag = { change, _ ->
-                        change.consume()
-                        drag = (change.position.x / size.width).coerceIn(0f, 1f)
-                    },
-                )
-            },
-        contentAlignment = Alignment.CenterStart,
+        Modifier
+            .size(40.dp)
+            .pressClick(onClick, pressedScale = 0.88f)
+            .clip(CircleShape),
+        contentAlignment = Alignment.Center,
     ) {
-        Box(
-            Modifier
-                .fillMaxWidth()
-                .height(4.dp)
-                .clip(CircleShape)
-                .background(Color.White.copy(alpha = 0.16f))
-        )
-        Box(
-            Modifier
-                .fillMaxWidth(shown.coerceIn(0f, 1f))
-                .height(4.dp)
-                .clip(CircleShape)
-                .background(Color.White)
-        )
+        Icon(icon, description, tint = Color.White.copy(alpha = 0.75f), modifier = Modifier.size(22.dp))
     }
 }

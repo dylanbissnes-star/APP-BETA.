@@ -6,42 +6,39 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.drawWithContent
 import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Shape
 import androidx.compose.ui.unit.dp
+import com.example.glassplayer.ui.theme.BlackGlass
 
 /**
- * Cristal translucido sobre fondo negro:
- *  - base oscura + velo claro muy tenue (se ve el ambiente detras)
- *  - borde suave con brillo en esquinas opuestas
- *  - reflejo diagonal (como luz sobre el vidrio)
+ * Cristal ahumado (monocromatico):
+ *  - base negra translucida + velo blanco muy tenue (rgba 255,255,255,0.045)
+ *  - desenfoque real del fondo si se pasa `backdrop` (Android 12+)
+ *  - borde blanco sutil y reflejo discreto en el borde superior
  *
- * Nota: Compose no trae "backdrop blur" nativo; el efecto se logra con translucidez,
- * borde y reflejo sobre un fondo ya difuso (ver README para blur real con Haze).
+ * `strength` sube/baja la presencia del velo; `darkness` la opacidad del negro de base.
  */
 fun Modifier.glass(
     shape: Shape,
     tint: Color = Color.White,
     strength: Float = 1f,
+    darkness: Float = 0.42f,
+    backdrop: BackdropState? = null,
 ): Modifier = this
     .clip(shape)
-    .background(Color.Black.copy(alpha = 0.30f))
-    .background(
-        Brush.verticalGradient(
-            listOf(
-                tint.copy(alpha = 0.11f * strength),
-                tint.copy(alpha = 0.035f * strength),
-            )
-        )
-    )
+    .then(if (backdrop != null) Modifier.backdropBlur(backdrop) else Modifier)
+    .background(Color.Black.copy(alpha = darkness))
+    .background(tint.copy(alpha = 0.045f * strength.coerceIn(0.5f, 3f)))
     .border(
         width = 1.dp,
         brush = Brush.linearGradient(
             colors = listOf(
-                Color.White.copy(alpha = 0.42f),
-                Color.White.copy(alpha = 0.04f),
-                Color.White.copy(alpha = 0.20f),
+                Color.White.copy(alpha = 0.26f),
+                Color.White.copy(alpha = 0.05f),
+                BlackGlass.GlassBorder,
             ),
             start = Offset.Zero,
             end = Offset.Infinite,
@@ -50,13 +47,19 @@ fun Modifier.glass(
     )
     .drawWithContent {
         drawContent()
-        // Reflejo diagonal en la esquina superior izquierda
+        // Reflejo suave en la parte alta
         drawRect(
-            brush = Brush.linearGradient(
-                colors = listOf(Color.White.copy(alpha = 0.10f * strength.coerceAtMost(1.5f)), Color.Transparent),
-                start = Offset.Zero,
-                end = Offset(size.width * 0.85f, size.height * 0.65f),
+            brush = Brush.verticalGradient(
+                colors = listOf(Color.White.copy(alpha = 0.06f), Color.Transparent),
+                endY = size.height * 0.40f,
             )
+        )
+        // Hilo de luz en el borde superior
+        drawRect(
+            brush = Brush.horizontalGradient(
+                colors = listOf(Color.Transparent, BlackGlass.Shine, Color.Transparent),
+            ),
+            size = Size(size.width, 1.dp.toPx()),
         )
     }
 
@@ -68,17 +71,17 @@ fun Modifier.blackGlass(shape: Shape): Modifier = this
     .clip(shape)
     .background(
         Brush.verticalGradient(
-            listOf(Color(0xEE1C1C23), Color(0xF4040405))
+            listOf(Color(0xF2141414), Color(0xF8050505))
         )
     )
     .border(
         width = 1.2.dp,
         brush = Brush.linearGradient(
             colors = listOf(
-                Color.White.copy(alpha = 0.85f),
+                Color.White.copy(alpha = 0.60f),
                 Color.White.copy(alpha = 0.05f),
-                Color.White.copy(alpha = 0.50f),
-                Color.White.copy(alpha = 0.08f),
+                Color.White.copy(alpha = 0.34f),
+                Color.White.copy(alpha = 0.06f),
             ),
             start = Offset.Zero,
             end = Offset.Infinite,
@@ -89,7 +92,7 @@ fun Modifier.blackGlass(shape: Shape): Modifier = this
         drawContent()
         drawRect(
             brush = Brush.verticalGradient(
-                colors = listOf(Color.White.copy(alpha = 0.10f), Color.Transparent),
+                colors = listOf(Color.White.copy(alpha = 0.08f), Color.Transparent),
                 endY = size.height * 0.5f,
             )
         )

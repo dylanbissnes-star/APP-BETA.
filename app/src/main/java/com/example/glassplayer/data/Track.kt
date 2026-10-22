@@ -23,6 +23,7 @@ data class Track(
     val durationMs: Long = 0L,
     /** "device", "demo" o el URI (texto) de la carpeta de donde viene. */
     val sourceId: String = SOURCE_DEVICE,
+    val album: String = "",
 ) {
     fun toMediaItem(): MediaItem =
         MediaItem.Builder()
@@ -32,6 +33,7 @@ data class Track(
                 MediaMetadata.Builder()
                     .setTitle(title)
                     .setArtist(artist)
+                    .setAlbumTitle(album)
                     .setArtworkUri(artUri)
                     .setDurationMs(durationMs)
                     .build()
@@ -48,6 +50,7 @@ fun MediaItem.toTrack(): Track = Track(
     artUri = mediaMetadata.artworkUri,
     durationMs = mediaMetadata.durationMs ?: 0L,
     sourceId = "",
+    album = mediaMetadata.albumTitle?.toString() ?: "",
 )
 
 object TrackRepository {
@@ -61,6 +64,7 @@ object TrackRepository {
             MediaStore.Audio.Media.TITLE,
             MediaStore.Audio.Media.ARTIST,
             MediaStore.Audio.Media.ALBUM_ID,
+            MediaStore.Audio.Media.ALBUM,
             MediaStore.Audio.Media.DURATION,
         )
         val selection =
@@ -73,6 +77,7 @@ object TrackRepository {
                 val titleCol = c.getColumnIndexOrThrow(MediaStore.Audio.Media.TITLE)
                 val artistCol = c.getColumnIndexOrThrow(MediaStore.Audio.Media.ARTIST)
                 val albumCol = c.getColumnIndexOrThrow(MediaStore.Audio.Media.ALBUM_ID)
+                val albumNameCol = c.getColumnIndexOrThrow(MediaStore.Audio.Media.ALBUM)
                 val durCol = c.getColumnIndexOrThrow(MediaStore.Audio.Media.DURATION)
                 while (c.moveToNext() && result.size < 500) {
                     val id = c.getLong(idCol)
@@ -87,6 +92,7 @@ object TrackRepository {
                         ),
                         durationMs = c.getLong(durCol),
                         sourceId = SOURCE_DEVICE,
+                        album = c.getString(albumNameCol)?.takeUnless { it == "<unknown>" } ?: "",
                     )
                 }
             }
