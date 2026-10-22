@@ -67,6 +67,13 @@ app/src/main/java/com/example/glassplayer/
         └── GlassControlBar.kt   Cápsula de controles
 ```
 
+## Icono y nombre
+
+- Logo en `res/drawable-nodpi/`: `ic_launcher_foreground.png` (icono adaptable sobre fondo negro),
+  `ic_launcher_monochrome.png` (icono temático de Android 13+) y `logo_mark.png` (el que se ve
+  dentro de la app: cabecera y marca de agua tenue).
+- El nombre que aparece bajo el icono es `app_name` en `res/values/strings.xml`.
+
 ## Notas sobre la cola
 
 - La cola real es la lista del propio reproductor: «añadir a la cola» inserta la canción justo

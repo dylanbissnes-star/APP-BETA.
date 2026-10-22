@@ -11,6 +11,7 @@ import androidx.compose.animation.fadeOut
 import androidx.compose.animation.slideInHorizontally
 import androidx.compose.animation.slideOutHorizontally
 import androidx.compose.animation.togetherWith
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -41,13 +42,16 @@ import androidx.compose.runtime.setValue
 import androidx.compose.runtime.snapshotFlow
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.shadow
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.example.glassplayer.PlayerUiState
 import com.example.glassplayer.PlayerViewModel
+import com.example.glassplayer.R
 import com.example.glassplayer.ui.components.AuroraBackground
 import com.example.glassplayer.ui.components.CoverCarousel
 import com.example.glassplayer.ui.components.DockItem
@@ -84,6 +88,16 @@ fun PlayerScreen(vm: PlayerViewModel) {
     Box(Modifier.fillMaxSize()) {
         // Fondo negro con luz ambiental que cambia con la portada
         AuroraBackground(colors = palette, art = art)
+
+        // Marca de agua: el logo, grande y muy tenue, detras de todo
+        Image(
+            painter = painterResource(R.drawable.logo_mark),
+            contentDescription = null,
+            modifier = Modifier
+                .align(Alignment.Center)
+                .fillMaxWidth(0.9f)
+                .alpha(0.07f),
+        )
 
         // Las tres pantallas comparten fondo, cabecera y dock; cambian con un deslizamiento suave
         AnimatedContent(
