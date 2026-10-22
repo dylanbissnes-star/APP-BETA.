@@ -39,7 +39,7 @@ fun CoverThumb(artUri: Any?, size: Dp, corner: Dp = 12.dp, modifier: Modifier = 
         modifier
             .size(size)
             .clip(RoundedCornerShape(corner))
-            .background(Brush.linearGradient(listOf(Color(0xFF2E2E38), Color(0xFF0E0E12)))),
+            .background(Brush.linearGradient(listOf(Color(0xFF2A2A2A), Color(0xFF0C0C0C)))),
         contentAlignment = Alignment.Center,
     ) {
         Icon(

@@ -54,12 +54,13 @@ fun GlassDock(
     onSelect: (Int) -> Unit,
     modifier: Modifier = Modifier,
     badges: Map<Int, Int> = emptyMap(),
+    backdrop: BackdropState? = null,
 ) {
     val shape = RoundedCornerShape(50)
     Row(
         modifier
             .shadow(24.dp, shape, ambientColor = Color.Black, spotColor = Color.Black)
-            .blackGlass(shape)
+            .glass(shape, strength = 1.6f, darkness = 0.62f, backdrop = backdrop)
             .padding(6.dp)
             .animateContentSize(spring(dampingRatio = Spring.DampingRatioLowBouncy, stiffness = Spring.StiffnessMediumLow)),
         horizontalArrangement = Arrangement.spacedBy(4.dp),

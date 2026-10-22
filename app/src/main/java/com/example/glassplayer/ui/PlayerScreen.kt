@@ -1,5 +1,7 @@
 package com.example.glassplayer.ui
 
+import android.content.Intent
+import android.provider.Settings
 import androidx.activity.compose.BackHandler
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
@@ -28,8 +30,9 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.rounded.QueueMusic
-import androidx.compose.material.icons.rounded.Album
+import androidx.compose.material.icons.rounded.Home
 import androidx.compose.material.icons.rounded.LibraryMusic
+import androidx.compose.material.icons.rounded.Search
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
@@ -44,8 +47,9 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.shadow
-import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
@@ -57,16 +61,20 @@ import com.example.glassplayer.ui.components.CoverCarousel
 import com.example.glassplayer.ui.components.DockItem
 import com.example.glassplayer.ui.components.GlassControlBar
 import com.example.glassplayer.ui.components.GlassDock
+import com.example.glassplayer.ui.components.NowPlayingInfo
 import com.example.glassplayer.ui.components.ScreenHeader
+import com.example.glassplayer.ui.components.backdropSource
 import com.example.glassplayer.ui.components.blackGlass
+import com.example.glassplayer.ui.components.rememberBackdropState
 import com.example.glassplayer.ui.components.rememberCoverPalette
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.drop
 
-private enum class Screen { Home, Library, Queue }
+private enum class Screen { Home, Search, Library, Queue }
 
 private val dockItems = listOf(
-    DockItem(Icons.Rounded.Album, "Reproductor"),
+    DockItem(Icons.Rounded.Home, "Inicio"),
+    DockItem(Icons.Rounded.Search, "Buscar"),
     DockItem(Icons.Rounded.LibraryMusic, "Biblioteca"),
     DockItem(Icons.AutoMirrored.Rounded.QueueMusic, "Cola"),
 )
@@ -77,6 +85,7 @@ fun PlayerScreen(vm: PlayerViewModel) {
     val art = state.current?.artUri
     val palette = rememberCoverPalette(art)
     var screen by rememberSaveable { mutableStateOf(Screen.Home) }
+    val backdrop = rememberBackdropState()
 
     // Selector de carpetas del sistema (Storage Access Framework)
     val folderPicker = rememberLauncherForActivityResult(ActivityResultContracts.OpenDocumentTree()) { uri ->
@@ -86,63 +95,78 @@ fun PlayerScreen(vm: PlayerViewModel) {
     BackHandler(enabled = screen != Screen.Home) { screen = Screen.Home }
 
     Box(Modifier.fillMaxSize()) {
-        // Fondo negro con luz ambiental que cambia con la portada
-        AuroraBackground(colors = palette, art = art)
+        // Todo lo que queda DETRAS del dock: el dock desenfoca esta capa (cristal real)
+        Box(Modifier.fillMaxSize().backdropSource(backdrop)) {
+            // Fondo negro con luz ambiental en escala de grises
+            AuroraBackground(colors = palette, art = art)
 
-        // Marca de agua: el logo, grande y muy tenue, detras de todo
-        Image(
-            painter = painterResource(R.drawable.logo_mark),
-            contentDescription = null,
-            modifier = Modifier
-                .align(Alignment.Center)
-                .fillMaxWidth(0.9f)
-                .alpha(0.07f),
-        )
+            // Marca de agua: el logo, grande y muy tenue
+            Image(
+                painter = painterResource(R.drawable.logo_mark),
+                contentDescription = null,
+                modifier = Modifier
+                    .align(Alignment.Center)
+                    .fillMaxWidth(0.9f)
+                    .alpha(0.05f),
+            )
 
-        // Las tres pantallas comparten fondo, cabecera y dock; cambian con un deslizamiento suave
-        AnimatedContent(
-            targetState = screen,
-            modifier = Modifier.fillMaxSize(),
-            transitionSpec = {
-                val dir = if (targetState.ordinal > initialState.ordinal) 1 else -1
-                (slideInHorizontally(tween(380, easing = FastOutSlowInEasing)) { (it / 5) * dir } +
-                    fadeIn(tween(300))) togetherWith
-                    (slideOutHorizontally(tween(300, easing = FastOutSlowInEasing)) { -(it / 5) * dir } +
-                        fadeOut(tween(200)))
-            },
-            label = "screens",
-        ) { target ->
-            when (target) {
-                Screen.Home -> HomeContent(state = state, vm = vm)
-                Screen.Library -> LibraryScreen(
-                    state = state,
-                    onAddFolder = { folderPicker.launch(null) },
-                    onRemoveFolder = vm::removeFolder,
-                    onSelectSource = vm::selectSource,
-                    onPlay = { list, index ->
-                        vm.playFromList(list, index)
-                        screen = Screen.Home
-                    },
-                    onQueue = vm::addToQueue,
-                )
-                Screen.Queue -> QueueScreen(
-                    state = state,
-                    onJump = { index ->
-                        vm.jumpTo(index)
-                        screen = Screen.Home
-                    },
-                    onRemove = vm::removeFromQueue,
-                    onClearQueued = vm::clearQueued,
-                )
+            // Las pantallas comparten fondo, cabecera y dock; cambian con un deslizamiento suave
+            AnimatedContent(
+                targetState = screen,
+                modifier = Modifier.fillMaxSize(),
+                transitionSpec = {
+                    val dir = if (targetState.ordinal > initialState.ordinal) 1 else -1
+                    (slideInHorizontally(tween(380, easing = FastOutSlowInEasing)) { (it / 5) * dir } +
+                        fadeIn(tween(300))) togetherWith
+                        (slideOutHorizontally(tween(300, easing = FastOutSlowInEasing)) { -(it / 5) * dir } +
+                            fadeOut(tween(200)))
+                },
+                label = "screens",
+            ) { target ->
+                when (target) {
+                    Screen.Home -> HomeContent(
+                        state = state,
+                        vm = vm,
+                        onOpenQueue = { screen = Screen.Queue },
+                    )
+                    Screen.Search -> SearchScreen(
+                        state = state,
+                        onPlay = { list, index ->
+                            vm.playFromList(list, index)
+                            screen = Screen.Home
+                        },
+                    )
+                    Screen.Library -> LibraryScreen(
+                        state = state,
+                        onAddFolder = { folderPicker.launch(null) },
+                        onRemoveFolder = vm::removeFolder,
+                        onSelectSource = vm::selectSource,
+                        onPlay = { list, index ->
+                            vm.playFromList(list, index)
+                            screen = Screen.Home
+                        },
+                        onQueue = vm::addToQueue,
+                    )
+                    Screen.Queue -> QueueScreen(
+                        state = state,
+                        onJump = { index ->
+                            vm.jumpTo(index)
+                            screen = Screen.Home
+                        },
+                        onRemove = vm::removeFromQueue,
+                        onClearQueued = vm::clearQueued,
+                    )
+                }
             }
         }
 
-        // Dock flotante de navegacion
+        // Dock flotante de navegacion (cristal con desenfoque del fondo)
         GlassDock(
             items = dockItems,
             selectedIndex = screen.ordinal,
             onSelect = { screen = Screen.entries[it] },
             badges = mapOf(Screen.Queue.ordinal to state.queuedCount),
+            backdrop = backdrop,
             modifier = Modifier
                 .align(Alignment.BottomCenter)
                 .navigationBarsPadding()
@@ -181,7 +205,10 @@ fun PlayerScreen(vm: PlayerViewModel) {
 private fun HomeContent(
     state: PlayerUiState,
     vm: PlayerViewModel,
+    onOpenQueue: () -> Unit,
 ) {
+    val context = LocalContext.current
+
     Column(
         Modifier
             .fillMaxSize()
@@ -190,8 +217,8 @@ private fun HomeContent(
             .padding(bottom = 92.dp), // espacio para el dock
     ) {
         ScreenHeader(
-            title = "Reproduciendo",
-            subtitle = "${state.tracks.size} canciones en la lista",
+            title = "Inicio",
+            subtitle = "Reproduciendo ahora",
         )
 
         if (state.tracks.isEmpty()) {
@@ -224,7 +251,9 @@ private fun HomeContent(
                 verticalArrangement = Arrangement.Center,
             ) {
                 CoverCarousel(state.tracks, pagerState)
-                Spacer(Modifier.height(20.dp))
+                Spacer(Modifier.height(12.dp))
+                NowPlayingInfo(state.current)
+                Spacer(Modifier.height(8.dp))
                 GlassControlBar(
                     state = state,
                     onPrevious = vm::previous,
@@ -233,9 +262,19 @@ private fun HomeContent(
                     onSeek = vm::seekToFraction,
                     onShuffle = vm::toggleShuffle,
                     onRepeat = vm::cycleRepeat,
+                    onOpenQueue = onOpenQueue,
+                    onOpenDevices = { openAudioOutputs(context) },
                     modifier = Modifier.padding(horizontal = 16.dp),
                 )
             }
         }
     }
+}
+
+/** Abre el selector de salida de audio del sistema (altavoz, Bluetooth, etc.). */
+private fun openAudioOutputs(context: android.content.Context) {
+    val panel = Intent(Settings.Panel.ACTION_VOLUME)
+    val fallback = Intent(Settings.ACTION_BLUETOOTH_SETTINGS)
+    runCatching { context.startActivity(panel) }
+        .recoverCatching { context.startActivity(fallback) }
 }

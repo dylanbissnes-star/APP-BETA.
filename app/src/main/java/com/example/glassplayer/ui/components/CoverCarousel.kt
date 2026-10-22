@@ -1,48 +1,45 @@
 package com.example.glassplayer.ui.components
 
+import android.os.Build
 import androidx.compose.foundation.background
-import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.pager.HorizontalPager
-import androidx.compose.foundation.pager.PagerState
 import androidx.compose.foundation.pager.PageSize
+import androidx.compose.foundation.pager.PagerState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.MusicNote
 import androidx.compose.material3.Icon
-import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.shadow
+import androidx.compose.ui.graphics.BlurEffect
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalDensity
-import androidx.compose.ui.text.style.TextAlign
-import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.zIndex
 import coil.compose.AsyncImage
 import com.example.glassplayer.data.Track
 import kotlin.math.abs
 
-private val CardWidth = 208.dp
+private val CardWidth = 226.dp
 
 /**
- * Carrusel 3D: la portada central se ve de frente y las vecinas
- * giran hacia atras y se achican, como en la referencia.
+ * Carrusel con profundidad 3D: la portada activa va al centro, nitida y a tamano completo;
+ * las vecinas quedan parcialmente detras, mas pequenas, mas tenues y desenfocadas (Android 12+).
+ * Las portadas conservan sus colores; todo lo demas es monocromatico.
  */
 @Composable
 fun CoverCarousel(
@@ -71,40 +68,47 @@ fun CoverCarousel(
                 .zIndex(-dist)
                 .graphicsLayer {
                     cameraDistance = 14f * density
-                    rotationY = (offset * -38f).coerceIn(-55f, 55f)
-                    val s = 1f - 0.16f * dist
+                    rotationY = (offset * -34f).coerceIn(-52f, 52f)
+                    val s = 1f - 0.18f * dist
                     scaleX = s
                     scaleY = s
-                    // Pega las vecinas a la central para que se solapen
+                    // Las vecinas se solapan con la central
                     translationX = offset * cardWidthPx * 0.30f
-                    alpha = 1f - 0.28f * dist
+                    alpha = 1f - 0.34f * dist
+                    // Desenfoque progresivo de las portadas laterales (Android 12+)
+                    if (Build.VERSION.SDK_INT >= 31) {
+                        val r = dist * 5f * density
+                        renderEffect = if (r > 0.5f) BlurEffect(r, r) else null
+                    }
                 }
         )
     }
 }
 
+/** Tarjeta de cristal que enmarca solo la portada; el texto va debajo del carrusel. */
 @Composable
 private fun CoverCard(track: Track, modifier: Modifier = Modifier) {
-    val shape = RoundedCornerShape(30.dp)
-    Column(
+    val shape = RoundedCornerShape(32.dp)
+    Box(
         modifier = modifier
             .width(CardWidth)
-            .shadow(24.dp, shape, ambientColor = Color.Black, spotColor = Color.Black)
-            .glass(shape)
-            .padding(9.dp),
-        horizontalAlignment = Alignment.CenterHorizontally,
+            .shadow(26.dp, shape, ambientColor = Color.Black, spotColor = Color.Black)
+            .glass(shape, darkness = 0.35f)
+            .padding(8.dp),
     ) {
         Box(
             Modifier
                 .fillMaxWidth()
                 .aspectRatio(1f)
-                .clip(RoundedCornerShape(22.dp))
-                .background(
-                    Brush.linearGradient(listOf(Color(0xFF3A3A4A), Color(0xFF15151C)))
-                ),
+                .clip(RoundedCornerShape(25.dp))
+                .background(Brush.linearGradient(listOf(Color(0xFF2A2A2A), Color(0xFF0C0C0C)))),
             contentAlignment = Alignment.Center,
         ) {
-            Icon(Icons.Rounded.MusicNote, null, tint = Color.White.copy(alpha = 0.5f), modifier = Modifier.height(56.dp))
+            Icon(
+                Icons.Rounded.MusicNote, null,
+                tint = Color.White.copy(alpha = 0.40f),
+                modifier = Modifier.size(56.dp),
+            )
             if (track.artUri != null) {
                 AsyncImage(
                     model = track.artUri,
@@ -113,28 +117,6 @@ private fun CoverCard(track: Track, modifier: Modifier = Modifier) {
                     modifier = Modifier.matchParentSize(),
                 )
             }
-        }
-        Column(
-            Modifier.fillMaxWidth().padding(horizontal = 6.dp, vertical = 12.dp),
-            horizontalAlignment = Alignment.CenterHorizontally,
-            verticalArrangement = Arrangement.spacedBy(2.dp),
-        ) {
-            Text(
-                track.title,
-                style = MaterialTheme.typography.titleMedium,
-                color = Color.White,
-                maxLines = 1,
-                overflow = TextOverflow.Ellipsis,
-                textAlign = TextAlign.Center,
-            )
-            Text(
-                track.artist,
-                style = MaterialTheme.typography.bodyMedium,
-                color = Color.White.copy(alpha = 0.65f),
-                maxLines = 1,
-                overflow = TextOverflow.Ellipsis,
-                textAlign = TextAlign.Center,
-            )
         }
     }
 }

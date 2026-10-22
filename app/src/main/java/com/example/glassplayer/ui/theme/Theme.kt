@@ -11,7 +11,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.sp
 
 /** Negro de base de toda la app. */
-val GlassBase = Color(0xFF030305)
+val GlassBase = Color(0xFF000000)
 
 private val Colors = darkColorScheme(
     background = GlassBase,

@@ -63,6 +63,7 @@ object FolderScanner {
     private fun readTrack(context: Context, uri: Uri, fileName: String, sourceId: String): Track {
         var title: String? = null
         var artist: String? = null
+        var album: String? = null
         var duration = 0L
         var art: Uri? = null
 
@@ -71,6 +72,7 @@ object FolderScanner {
             retriever.setDataSource(context, uri)
             title = retriever.extractMetadata(MediaMetadataRetriever.METADATA_KEY_TITLE)
             artist = retriever.extractMetadata(MediaMetadataRetriever.METADATA_KEY_ARTIST)
+            album = retriever.extractMetadata(MediaMetadataRetriever.METADATA_KEY_ALBUM)
             duration = retriever.extractMetadata(MediaMetadataRetriever.METADATA_KEY_DURATION)
                 ?.toLongOrNull() ?: 0L
             retriever.embeddedPicture?.let { art = saveArt(context, uri, it) }
@@ -88,6 +90,7 @@ object FolderScanner {
             artUri = art,
             durationMs = duration,
             sourceId = sourceId,
+            album = album?.takeIf { it.isNotBlank() } ?: "",
         )
     }
 

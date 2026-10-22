@@ -5,9 +5,19 @@ Kotlin + Jetpack Compose + Media3 (ExoPlayer).
 
 ## Qué incluye
 
-- **Fondo negro con luz ambiental**: la portada actual, muy difuminada y apagada, más manchas
-  suaves de sus colores y un haz de luz tenue arriba a la derecha. Predomina el negro.
-- **Dock flotante** de navegación (Reproductor / Biblioteca / Cola): la pestaña activa se expande
+- **Black Glass (monocromo estricto)**: paleta `ui/theme/BlackGlass.kt` (negro #000, #080808,
+  #101010, texto #F5F5F5 / #909090, bordes y brillos blancos translúcidos). Sin colores de acento:
+  solo las portadas conservan su color.
+- **Fondo negro con luz ambiental en escala de grises** sacada de la portada actual, más un haz de
+  luz tenue arriba a la derecha.
+- **Cristal con desenfoque real** (Android 12+): el dock desenfoca lo que pasa por detrás
+  (`Backdrop.kt`, capas gráficas de Compose, sin librerías). En versiones anteriores queda translúcido.
+- **Carrusel con profundidad**: portada central nítida; las vecinas, más pequeñas, tenues y
+  desenfocadas. Título, artista y álbum aparecen debajo de la portada central.
+- **Panel de reproducción**: progreso fino, aleatorio/anterior/play/siguiente/repetir, **volumen**,
+  **dispositivos de audio** (selector del sistema) y acceso a la **cola**.
+- **Buscar**: campo negro con borde translúcido; busca por título, artista o álbum.
+- **Dock flotante** de navegación (Inicio / Buscar / Biblioteca / Cola): la pestaña activa se expande
   en una píldora con icono y texto, borde degradado y halo de luz; la cola muestra un contador.
 - **Cabecera común** (título, subtítulo, acción y separador fino) en las tres pantallas.
 - **Animaciones**: los botones se encogen y rebotan al pulsar, los iconos cambian con fundido,

@@ -26,7 +26,10 @@ import androidx.compose.ui.draw.blur
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.ColorFilter
+import androidx.compose.ui.graphics.ColorMatrix
 import androidx.compose.ui.graphics.toArgb
+import com.example.glassplayer.ui.theme.toGray
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
@@ -42,8 +45,8 @@ import kotlinx.coroutines.withContext
 import kotlin.math.cos
 import kotlin.math.sin
 
-/** Colores de ambiente cuando no hay portada: grises azulados muy sobrios. */
-val DefaultAurora = listOf(Color(0xFF3C3C4A), Color(0xFF5C5C6C), Color(0xFF22222C))
+/** Colores de ambiente cuando no hay portada: grises neutros. */
+val DefaultAurora = listOf(Color(0xFF3A3A3A), Color(0xFF5A5A5A), Color(0xFF222222))
 
 /** Extrae 3 colores de la portada para teñir (muy suave) el ambiente. */
 @Composable
@@ -82,9 +85,10 @@ fun rememberCoverPalette(art: Any?): List<Color> {
  */
 @Composable
 fun AuroraBackground(colors: List<Color>, art: Any?, modifier: Modifier = Modifier) {
-    val c1 by animateColorAsState(colors[0], tween(1400), label = "c1")
-    val c2 by animateColorAsState(colors[1], tween(1400), label = "c2")
-    val c3 by animateColorAsState(colors[2], tween(1400), label = "c3")
+    // El ambiente es SIEMPRE en escala de grises: solo la portada conserva su color
+    val c1 by animateColorAsState(colors[0].toGray(), tween(1400), label = "c1")
+    val c2 by animateColorAsState(colors[1].toGray(), tween(1400), label = "c2")
+    val c3 by animateColorAsState(colors[2].toGray(), tween(1400), label = "c3")
 
     val t = rememberInfiniteTransition(label = "ambient")
     val phase by t.animateFloat(
@@ -103,10 +107,11 @@ fun AuroraBackground(colors: List<Color>, art: Any?, modifier: Modifier = Modifi
                         model = current,
                         contentDescription = null,
                         contentScale = ContentScale.Crop,
+                        colorFilter = ColorFilter.colorMatrix(ColorMatrix().apply { setToSaturation(0f) }),
                         modifier = Modifier
                             .fillMaxSize()
                             .blur(90.dp)
-                            .alpha(0.30f),
+                            .alpha(0.24f),
                     )
                 }
             }
@@ -129,12 +134,12 @@ fun AuroraBackground(colors: List<Color>, art: Any?, modifier: Modifier = Modifi
             }
 
             // Tintes de la portada (suaves, para que predomine el negro)
-            blob(c1, w * (0.25f + 0.10f * cos(phase)), h * (0.42f + 0.05f * sin(phase)), w * 0.90f, 0.30f)
-            blob(c2, w * (0.80f + 0.08f * sin(phase * 1.3f)), h * (0.55f + 0.05f * cos(phase)), w * 0.70f, 0.16f)
-            blob(c3, w * (0.45f + 0.12f * sin(phase * 0.8f)), h * (0.90f + 0.03f * cos(phase * 1.1f)), w * 0.95f, 0.22f)
+            blob(c1, w * (0.25f + 0.10f * cos(phase)), h * (0.42f + 0.05f * sin(phase)), w * 0.90f, 0.22f)
+            blob(c2, w * (0.80f + 0.08f * sin(phase * 1.3f)), h * (0.55f + 0.05f * cos(phase)), w * 0.70f, 0.12f)
+            blob(c3, w * (0.45f + 0.12f * sin(phase * 0.8f)), h * (0.90f + 0.03f * cos(phase * 1.1f)), w * 0.95f, 0.14f)
 
             // Haz de luz tenue desde arriba a la derecha (como en la referencia)
-            blob(Color.White, w * 0.95f, -h * 0.03f, w * 1.25f, 0.11f + 0.025f * sin(phase))
+            blob(Color.White, w * 0.95f, -h * 0.03f, w * 1.25f, 0.08f + 0.02f * sin(phase))
 
             // Vineta: negro profundo arriba y abajo
             drawRect(
