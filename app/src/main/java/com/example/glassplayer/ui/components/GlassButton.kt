@@ -50,7 +50,7 @@ fun GlassButton(
     modifier: Modifier = Modifier,
     size: Dp = 48.dp,
     iconSize: Dp = size * 0.5f,
-    tint: Color = Color.White,
+    tint: Color = Frost.TextPrimary,
     badge: Int = 0,
     active: Boolean = false,
     pulse: Boolean = false,
@@ -67,6 +67,7 @@ fun GlassButton(
         v
     } else 0f
 
+    val glowColor = Frost.TextPrimary
     Box(
         modifier
             .size(size)
@@ -76,7 +77,7 @@ fun GlassButton(
                     val r = this.size.minDimension * 0.95f
                     drawCircle(
                         brush = Brush.radialGradient(
-                            listOf(Color.White.copy(alpha = a), Color.Transparent),
+                            listOf(Frost.TextPrimary.copy(alpha = a), Color.Transparent),
                             center = center,
                             radius = r,
                         ),
@@ -113,7 +114,7 @@ fun PlainIconButton(
     modifier: Modifier = Modifier,
     size: Dp = 44.dp,
     iconSize: Dp = 24.dp,
-    tint: Color = Color.White,
+    tint: Color = Frost.TextPrimary,
 ) {
     val iconTint by animateColorAsState(tint, tween(250), label = "plainTint")
     Box(
@@ -136,12 +137,12 @@ fun CountBadge(count: Int, modifier: Modifier = Modifier) {
         modifier
             .size(18.dp)
             .clip(CircleShape)
-            .background(Color.White),
+            .background(Frost.TextPrimary),
         contentAlignment = Alignment.Center,
     ) {
         Text(
             text = if (count > 9) "9+" else count.toString(),
-            color = Frost.Tint,
+            color = Frost.Inverse,
             fontSize = 10.sp,
             fontWeight = FontWeight.Bold,
         )
@@ -166,10 +167,10 @@ fun GlassPill(
         verticalAlignment = Alignment.CenterVertically,
     ) {
         if (icon != null) {
-            Icon(icon, null, tint = Color.White, modifier = Modifier.size(18.dp))
+            Icon(icon, null, tint = Frost.TextPrimary, modifier = Modifier.size(18.dp))
             Box(Modifier.size(8.dp))
         }
-        Text(text, style = MaterialTheme.typography.bodyMedium, color = Color.White)
+        Text(text, style = MaterialTheme.typography.bodyMedium, color = Frost.TextPrimary)
     }
 }
 
@@ -186,7 +187,7 @@ fun OutlineBadge(text: String, modifier: Modifier = Modifier) {
         Text(
             text,
             style = MaterialTheme.typography.labelSmall,
-            color = Color.White.copy(alpha = 0.9f),
+            color = Frost.content(0.9f),
         )
     }
 }

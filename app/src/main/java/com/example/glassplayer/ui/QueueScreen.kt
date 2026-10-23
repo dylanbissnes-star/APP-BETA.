@@ -19,6 +19,7 @@ import com.example.glassplayer.ui.components.GlassButton
 import com.example.glassplayer.ui.components.GlassPill
 import com.example.glassplayer.ui.components.ScreenHeader
 import com.example.glassplayer.ui.components.TrackRow
+import com.example.glassplayer.ui.theme.Frost
 
 /**
  * Pantalla "Cola de reproduccion":
@@ -70,7 +71,7 @@ fun QueueScreen(
                     Text(
                         "Nada en cola. Desliza una canción a la izquierda en la biblioteca para añadirla.",
                         style = MaterialTheme.typography.bodyMedium,
-                        color = Color.White.copy(alpha = 0.72f),
+                        color = Frost.content(0.72f),
                         modifier = Modifier.padding(horizontal = 4.dp, vertical = 4.dp),
                     )
                 }
@@ -121,7 +122,7 @@ private fun SectionLabel(text: String) {
     Text(
         text,
         style = MaterialTheme.typography.titleMedium,
-        color = Color.White,
+        color = Frost.TextPrimary,
         modifier = Modifier.padding(start = 4.dp, top = 12.dp, bottom = 2.dp),
     )
 }

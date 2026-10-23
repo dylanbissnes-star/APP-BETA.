@@ -93,7 +93,7 @@ fun TrackRow(
                 track.title,
                 style = MaterialTheme.typography.titleMedium,
                 fontWeight = FontWeight.Medium,
-                color = Color.White,
+                color = Frost.TextPrimary,
                 maxLines = 1,
                 overflow = TextOverflow.Ellipsis,
             )
@@ -112,7 +112,7 @@ fun TrackRow(
         } else {
             Icon(
                 Icons.Rounded.PlayArrow, "Reproducir",
-                tint = Color.White.copy(alpha = 0.92f),
+                tint = Frost.content(0.92f),
                 modifier = Modifier
                     .padding(end = 8.dp)
                     .size(26.dp),

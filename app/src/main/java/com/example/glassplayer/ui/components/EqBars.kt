@@ -16,10 +16,11 @@ import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
+import com.example.glassplayer.ui.theme.Frost
 
 /** Tres barras que "bailan" cuando la cancion suena (indicador de reproduccion). */
 @Composable
-fun EqBars(active: Boolean, modifier: Modifier = Modifier, color: Color = Color.White) {
+fun EqBars(active: Boolean, modifier: Modifier = Modifier, color: Color = Frost.TextPrimary) {
     val transition = rememberInfiniteTransition(label = "eq")
     val a by transition.animateFloat(
         0.30f, 1f,

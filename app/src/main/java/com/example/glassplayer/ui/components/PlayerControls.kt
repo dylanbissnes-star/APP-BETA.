@@ -96,7 +96,7 @@ fun PlayerControls(
                 value = state.progress,
                 onValueChange = onSeek,
                 fill = accent,
-                track = Color.White.copy(alpha = 0.80f),
+                track = if (Frost.OnDark) Frost.content(0.80f) else Frost.content(0.15f),
                 modifier = Modifier.padding(horizontal = 22.dp, vertical = 2.dp),
             )
             Row(
@@ -148,7 +148,7 @@ private fun PillIcon(
         PlainIconButton(
             icon, description, onClick,
             size = 44.dp, iconSize = 24.dp,
-            tint = if (active) Color.White else Color.White.copy(alpha = 0.62f),
+            tint = if (active) Frost.TextPrimary else Frost.content(0.62f),
         )
         if (active) {
             Box(
@@ -157,7 +157,7 @@ private fun PillIcon(
                     .offset(y = (-3).dp)
                     .size(4.dp)
                     .clip(CircleShape)
-                    .background(Color.White)
+                    .background(Frost.TextPrimary)
             )
         }
         if (badge > 0) {

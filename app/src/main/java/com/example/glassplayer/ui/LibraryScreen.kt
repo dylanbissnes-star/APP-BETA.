@@ -165,7 +165,7 @@ fun LibraryScreen(
 @Composable
 private fun SectionTitle(title: String, hint: String? = null) {
     Column(Modifier.padding(start = 4.dp, top = 8.dp)) {
-        Text(title, color = Color.White, fontSize = 18.sp, fontWeight = FontWeight.SemiBold)
+        Text(title, color = Frost.TextPrimary, fontSize = 18.sp, fontWeight = FontWeight.SemiBold)
         if (hint != null) {
             Text(hint, style = MaterialTheme.typography.labelSmall, color = Frost.TextSecondary)
         }
@@ -211,7 +211,7 @@ private fun SwipeableTrackRow(
                     Text(
                         "A la cola",
                         style = MaterialTheme.typography.bodyMedium,
-                        color = Color.White,
+                        color = Frost.TextPrimary,
                         modifier = Modifier.padding(end = 10.dp),
                     )
                     GlassButton(Icons.AutoMirrored.Rounded.PlaylistAdd, "Añadir a la cola", {}, size = 40.dp, active = true)
@@ -244,10 +244,10 @@ private fun SourceChip(
             Modifier
                 .size(34.dp)
                 .clip(RoundedCornerShape(11.dp))
-                .background(Color.White.copy(alpha = 0.26f)),
+                .background(Frost.content(0.26f)),
             contentAlignment = Alignment.Center,
         ) {
-            Icon(item.icon, null, tint = Color.White, modifier = Modifier.size(19.dp))
+            Icon(item.icon, null, tint = Frost.TextPrimary, modifier = Modifier.size(19.dp))
         }
         Column(
             Modifier
@@ -258,7 +258,7 @@ private fun SourceChip(
                 item.label,
                 fontSize = 13.sp,
                 fontWeight = FontWeight.Medium,
-                color = Color.White,
+                color = Frost.TextPrimary,
                 maxLines = 1,
                 overflow = TextOverflow.Ellipsis,
             )
@@ -275,10 +275,10 @@ private fun SourceChip(
                     .size(26.dp)
                     .pressClick(onRemove)
                     .clip(CircleShape)
-                    .background(Color.White.copy(alpha = 0.28f)),
+                    .background(Frost.content(0.28f)),
                 contentAlignment = Alignment.Center,
             ) {
-                Icon(Icons.Rounded.Close, "Quitar carpeta", tint = Color.White, modifier = Modifier.size(15.dp))
+                Icon(Icons.Rounded.Close, "Quitar carpeta", tint = Frost.TextPrimary, modifier = Modifier.size(15.dp))
             }
         }
     }
@@ -293,7 +293,7 @@ private fun EmptyLibrary(scanning: Boolean, onAddFolder: () -> Unit) {
         horizontalAlignment = Alignment.CenterHorizontally,
     ) {
         if (scanning) {
-            CircularProgressIndicator(color = Color.White)
+            CircularProgressIndicator(color = Frost.TextPrimary)
             Text(
                 "Buscando música…",
                 style = MaterialTheme.typography.bodyMedium,
@@ -304,7 +304,7 @@ private fun EmptyLibrary(scanning: Boolean, onAddFolder: () -> Unit) {
             Text(
                 "No hay canciones aquí",
                 style = MaterialTheme.typography.titleMedium,
-                color = Color.White,
+                color = Frost.TextPrimary,
                 textAlign = TextAlign.Center,
             )
             Text(
