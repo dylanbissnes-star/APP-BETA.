@@ -77,7 +77,7 @@ fun GlassButton(
                     val r = this.size.minDimension * 0.95f
                     drawCircle(
                         brush = Brush.radialGradient(
-                            listOf(Frost.TextPrimary.copy(alpha = a), Color.Transparent),
+                            listOf(glowColor.copy(alpha = a), Color.Transparent),
                             center = center,
                             radius = r,
                         ),
