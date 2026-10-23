@@ -21,7 +21,7 @@ import androidx.compose.ui.unit.sp
 import com.example.glassplayer.R
 import com.example.glassplayer.ui.theme.Frost
 
-/** Cabecera comun a las pantallas: logo, titulo grande, subtitulo y una accion a la derecha. */
+/** Cabecera comun a las pantallas: titulo grande, subtitulo y una accion a la derecha. */
 @Composable
 fun ScreenHeader(
     title: String,
@@ -32,17 +32,11 @@ fun ScreenHeader(
     Row(
         modifier
             .fillMaxWidth()
-            .padding(start = 20.dp, end = 16.dp, top = 18.dp, bottom = 10.dp),
+            .padding(start = 22.dp, end = 16.dp, top = 6.dp, bottom = 10.dp),
         verticalAlignment = Alignment.CenterVertically,
     ) {
-        Image(
-            painter = painterResource(R.drawable.logo_mark),
-            contentDescription = null,
-            modifier = Modifier.size(36.dp),
-        )
-        Spacer(Modifier.width(12.dp))
         Column(Modifier.weight(1f)) {
-            Text(title, color = Color.White, fontSize = 24.sp, fontWeight = FontWeight.SemiBold)
+            Text(title, color = Frost.TextPrimary, fontSize = 24.sp, fontWeight = FontWeight.SemiBold)
             Text(subtitle, style = MaterialTheme.typography.bodyMedium, color = Frost.TextSecondary)
         }
         if (trailing != null) trailing()

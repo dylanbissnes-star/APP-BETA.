@@ -37,6 +37,7 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import kotlinx.coroutines.delay
 import kotlin.math.roundToInt
+import com.example.glassplayer.ui.theme.Frost
 
 /**
  * Deslizador fino y monocromatico (blanco sobre gris).
@@ -50,8 +51,8 @@ fun ThinSlider(
     modifier: Modifier = Modifier,
     live: Boolean = false,
     onDragging: (Boolean) -> Unit = {},
-    fill: Color = Color.White.copy(alpha = 0.92f),
-    track: Color = Color.White.copy(alpha = 0.30f),
+    fill: Color = Frost.content(0.92f),
+    track: Color = Frost.content(0.30f),
 ) {
     val latestChange by rememberUpdatedState(onValueChange)
     val latestDragging by rememberUpdatedState(onDragging)
@@ -112,7 +113,7 @@ fun ThinSlider(
                 .offset(x = maxWidth * shown - thumb / 2)
                 .size(thumb)
                 .clip(CircleShape)
-                .background(Color.White)
+                .background(Frost.TextPrimary)
         )
     }
 }
@@ -137,7 +138,7 @@ fun VolumeControl(modifier: Modifier = Modifier) {
         Icon(
             if (fraction <= 0f) Icons.AutoMirrored.Rounded.VolumeOff else Icons.AutoMirrored.Rounded.VolumeUp,
             contentDescription = "Volumen",
-            tint = Color.White.copy(alpha = 0.7f),
+            tint = Frost.content(0.7f),
             modifier = Modifier.size(20.dp),
         )
         ThinSlider(

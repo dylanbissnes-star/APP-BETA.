@@ -56,7 +56,7 @@ fun MiniPlayer(
                 track.title,
                 style = MaterialTheme.typography.titleMedium,
                 fontWeight = FontWeight.Medium,
-                color = Color.White,
+                color = Frost.TextPrimary,
                 maxLines = 1,
                 overflow = TextOverflow.Ellipsis,
             )

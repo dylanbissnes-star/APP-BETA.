@@ -1,22 +1,65 @@
 package com.example.glassplayer.ui.theme
 
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.Immutable
+import androidx.compose.runtime.ReadOnlyComposable
+import androidx.compose.runtime.staticCompositionLocalOf
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.toArgb
 import kotlin.math.max
 
 /**
- * Paleta "Frosted Glass": cristal esmerilado claro sobre un fondo de color.
- * Texto siempre blanco (mas o menos opaco); el color lo ponen el fondo de esferas y las portadas.
+ * Colores de contenido segun la superficie sobre la que se dibuja:
+ *  - superficie CLARA (fondo blanco): texto grafito, cristal blanco con borde gris
+ *  - superficie OSCURA (modo oscuro, o portada desenfocada con velo): texto blanco, cristal translucido
  */
+@Immutable
+class FrostColors(
+    val onDark: Boolean,
+    val content: Color,
+    val secondary: Color,
+    val tertiary: Color,
+    val inverse: Color,
+)
+
+val LightFrost = FrostColors(
+    onDark = false,
+    content = Color(0xFF1C1C1E),
+    secondary = Color(0xFF1C1C1E).copy(alpha = 0.62f),
+    tertiary = Color(0xFF1C1C1E).copy(alpha = 0.42f),
+    inverse = Color.White,
+)
+
+val DarkFrost = FrostColors(
+    onDark = true,
+    content = Color.White,
+    secondary = Color.White.copy(alpha = 0.76f),
+    tertiary = Color.White.copy(alpha = 0.52f),
+    inverse = Color(0xFF1B1B20),
+)
+
+val LocalFrost = staticCompositionLocalOf { LightFrost }
+
 object Frost {
-    val TextPrimary = Color.White
-    val TextSecondary = Color.White.copy(alpha = 0.76f)
-    val TextTertiary = Color.White.copy(alpha = 0.52f)
+    val TextPrimary: Color @Composable @ReadOnlyComposable get() = LocalFrost.current.content
+    val TextSecondary: Color @Composable @ReadOnlyComposable get() = LocalFrost.current.secondary
+    val TextTertiary: Color @Composable @ReadOnlyComposable get() = LocalFrost.current.tertiary
 
-    /** Tinte indigo oscuro que se mezcla bajo el cristal para dar contraste al texto blanco. */
-    val Tint = Color(0xFF241447)
+    /** Color opuesto al texto (para el texto dentro de insignias rellenas con el color de contenido). */
+    val Inverse: Color @Composable @ReadOnlyComposable get() = LocalFrost.current.inverse
 
-    /** Acento de la barra de progreso (rojo-rosa, como en la referencia). */
+    /** `true` si ahora se dibuja sobre una superficie oscura. */
+    val OnDark: Boolean @Composable @ReadOnlyComposable get() = LocalFrost.current.onDark
+
+    /** Color de contenido con una opacidad dada (iconos, bordes y rellenos tenues). */
+    @Composable
+    @ReadOnlyComposable
+    fun content(alpha: Float): Color = LocalFrost.current.content.copy(alpha = alpha)
+
+    /** Tinte grafito para sombras y para dar contraste bajo el cristal. */
+    val Tint = Color(0xFF1B1B20)
+
+    /** Acento de la barra de progreso (rojo-rosa). */
     val Accent = Color(0xFFE5365F)
 }
 

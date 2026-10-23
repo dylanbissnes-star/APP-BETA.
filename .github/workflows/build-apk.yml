@@ -25,7 +25,17 @@ jobs:
           gradle-version: "8.9"
 
       - name: Compilar APK debug
-        run: gradle assembleDebug --stacktrace
+        run: |
+          set -o pipefail
+          gradle assembleDebug --stacktrace --console=plain 2>&1 | tee build.log
+
+      # Si la compilacion falla, deja los errores de Kotlin como anotaciones visibles en la ejecucion
+      - name: Mostrar errores de compilacion
+        if: failure()
+        run: |
+          grep -E "^e: |error:" build.log | head -40 | while IFS= read -r line; do
+            echo "::error::${line}"
+          done
 
       - name: Renombrar APK
         run: cp app/build/outputs/apk/debug/app-debug.apk GlassPlayer.apk

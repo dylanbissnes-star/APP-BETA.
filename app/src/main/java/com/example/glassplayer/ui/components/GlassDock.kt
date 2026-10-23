@@ -82,8 +82,10 @@ fun GlassDock(
 private fun DockButton(item: DockItem, selected: Boolean, badge: Int, onClick: () -> Unit) {
     val shape = RoundedCornerShape(50)
     val sel by animateFloatAsState(if (selected) 1f else 0f, tween(320), label = "dockSel")
+    val fg = Frost.TextPrimary
+    val k = if (Frost.OnDark) 1f else 0.30f   // en modo claro el relleno es mucho mas suave
     val tint by animateColorAsState(
-        if (selected) Color.White else Color.White.copy(alpha = 0.78f), tween(250), label = "dockTint",
+        if (selected) Frost.TextPrimary else Frost.content(0.78f), tween(250), label = "dockTint",
     )
 
     Box(
@@ -95,14 +97,14 @@ private fun DockButton(item: DockItem, selected: Boolean, badge: Int, onClick: (
                 if (sel > 0.01f) {
                     // Relleno suave
                     drawRoundRect(
-                        brush = Brush.verticalGradient(listOf(Color.White.copy(alpha = 0.42f), Color.White.copy(alpha = 0.20f))),
+                        brush = Brush.verticalGradient(listOf(fg.copy(alpha = 0.42f * k), fg.copy(alpha = 0.20f * k))),
                         cornerRadius = CornerRadius(size.height / 2f),
                         alpha = sel,
                     )
                     // Halo de luz inferior
                     drawCircle(
                         brush = Brush.radialGradient(
-                            listOf(Color.White.copy(alpha = 0.40f), Color.Transparent),
+                            listOf(fg.copy(alpha = 0.40f * k), Color.Transparent),
                             center = Offset(size.width / 2f, size.height),
                             radius = size.width * 0.7f,
                         ),
@@ -113,7 +115,7 @@ private fun DockButton(item: DockItem, selected: Boolean, badge: Int, onClick: (
                     // Borde con degradado
                     drawRoundRect(
                         brush = Brush.linearGradient(
-                            listOf(Color.White.copy(alpha = 0.95f), Color.White.copy(alpha = 0.12f), Color.White.copy(alpha = 0.65f)),
+                            listOf(fg.copy(alpha = 0.95f * k), fg.copy(alpha = 0.12f * k), fg.copy(alpha = 0.65f * k)),
                             start = Offset.Zero,
                             end = Offset(size.width, size.height),
                         ),
@@ -136,7 +138,7 @@ private fun DockButton(item: DockItem, selected: Boolean, badge: Int, onClick: (
                 Text(
                     item.label,
                     style = MaterialTheme.typography.bodyMedium,
-                    color = Color.White,
+                    color = Frost.TextPrimary,
                     fontWeight = FontWeight.Medium,
                     maxLines = 1,
                     modifier = Modifier.padding(start = 8.dp),
@@ -150,12 +152,12 @@ private fun DockButton(item: DockItem, selected: Boolean, badge: Int, onClick: (
                     .padding(top = 3.dp, end = 0.dp)
                     .size(16.dp)
                     .clip(CircleShape)
-                    .background(Color.White),
+                    .background(Frost.TextPrimary),
                 contentAlignment = Alignment.Center,
             ) {
                 Text(
                     text = if (badge > 9) "9+" else badge.toString(),
-                    color = Frost.Tint,
+                    color = Frost.Inverse,
                     fontSize = 9.sp,
                     fontWeight = FontWeight.Bold,
                 )

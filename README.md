@@ -5,13 +5,16 @@ Kotlin + Jetpack Compose + Media3 (ExoPlayer).
 
 ## Qué incluye
 
-- **Cristal esmerilado (Frosted Glass)**: un panel grande de cristal claro y translúcido sobre un
-  fondo de color con **esferas brillantes** que flotan despacio. Los colores del fondo salen de la
-  portada que suena (`SphereBackground.kt`); paleta en `ui/theme/Frost.kt`.
-- **Desenfoque real** (Android 12+): el panel, el dock y el mini reproductor desenfocan lo que hay
-  detrás (`Backdrop.kt`, capas gráficas de Compose, sin librerías). En versiones anteriores quedan
-  translúcidos.
-- **Reproductor** (Inicio): portada grande con marco de cristal (carrusel con profundidad), título y
+- **Fondo blanco con modo oscuro**: interruptor sol/luna siempre visible en la barra superior (se
+  recuerda entre sesiones). Al elegir una canción, su **portada desenfocada** pasa a ser el fondo
+  (`PageBackground.kt`); los textos y el cristal se adaptan solos (`ui/theme/Frost.kt`).
+- **Menú principal con carpetas** (`FolderMenu.kt`, `FolderShape.kt`): una carpeta de cristal por cada
+  carpeta de música, con las portadas de 3 álbumes asomando, las primeras canciones dentro y un botón
+  redondo con una nota para reproducirla. Desliza para cambiar de carpeta; toca para abrir su listado.
+  El botón **Agregar carpeta** está siempre visible.
+- **Desenfoque real** (Android 12+): el frente de la carpeta, el dock y el mini reproductor desenfocan
+  lo que hay detrás (`Backdrop.kt`, capas gráficas de Compose, sin librerías).
+- **Reproductor** (se abre desde el mini reproductor o al reproducir una carpeta): portada grande con marco de cristal (carrusel con profundidad), título y
   artista centrados, anterior / play-pausa / siguiente como símbolos blancos sin fondo, barra de
   progreso fina con tiempos, y una pastilla de cristal con aleatorio, repetir, salida de audio
   (selector del sistema, con volumen) y cola.
@@ -56,6 +59,7 @@ app/src/main/java/com/example/glassplayer/
 ├── data/FolderScanner.kt    Recorre una carpeta y lee metadatos
 └── ui/
     ├── PlayerScreen.kt      Pantalla principal y navegación
+    ├── FolderMenu.kt        Menú principal: carpetas de cristal
     ├── LibraryScreen.kt     Biblioteca + carpetas + deslizar a la cola
     ├── QueueScreen.kt       Cola de reproducción
     ├── theme/Theme.kt
@@ -68,7 +72,10 @@ app/src/main/java/com/example/glassplayer/
         ├── Interactions.kt      pressClick(): pulsación con resorte
         ├── EqBars.kt            Barras de ecualizador
         ├── TrackRow.kt          Fila de canción y miniatura
-        ├── SphereBackground.kt  Fondo de esferas + extracción de colores
+        ├── PageBackground.kt    Fondo blanco/oscuro o portada desenfocada
+        ├── CoverPalette.kt      Extracción de colores de la portada
+        ├── DarkModeToggle.kt    Interruptor sol/luna
+        ├── FolderShape.kt       Silueta del frente de la carpeta
         ├── CoverCarousel.kt     Carrusel de portadas
         └── PlayerControls.kt    Transporte, progreso y pastilla de acciones
 ```

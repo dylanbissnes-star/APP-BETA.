@@ -54,12 +54,12 @@ fun GlassSearchField(
         modifier
             .fillMaxWidth()
             .clip(shape)
-            .background(Color.White.copy(alpha = 0.18f))
-            .border(1.dp, Color.White.copy(alpha = borderAlpha), shape)
+            .background(Frost.content(0.18f))
+            .border(1.dp, Frost.TextPrimary.copy(alpha = borderAlpha), shape)
             .padding(horizontal = 16.dp, vertical = 12.dp),
         verticalAlignment = Alignment.CenterVertically,
     ) {
-        Icon(Icons.Rounded.Search, null, tint = Color.White.copy(alpha = 0.85f), modifier = Modifier.size(20.dp))
+        Icon(Icons.Rounded.Search, null, tint = Frost.content(0.85f), modifier = Modifier.size(20.dp))
         Box(
             Modifier
                 .weight(1f)
@@ -74,7 +74,7 @@ fun GlassSearchField(
                 onValueChange = onQueryChange,
                 singleLine = true,
                 textStyle = TextStyle(color = Frost.TextPrimary, fontSize = 15.sp),
-                cursorBrush = SolidColor(Color.White),
+                cursorBrush = SolidColor(Frost.TextPrimary),
                 interactionSource = source,
                 keyboardOptions = KeyboardOptions(imeAction = ImeAction.Search),
                 modifier = Modifier.fillMaxWidth(),
@@ -86,10 +86,10 @@ fun GlassSearchField(
                     .size(24.dp)
                     .pressClick({ onQueryChange("") }, pressedScale = 0.85f)
                     .clip(CircleShape)
-                    .background(Color.White.copy(alpha = 0.30f)),
+                    .background(Frost.content(0.30f)),
                 contentAlignment = Alignment.Center,
             ) {
-                Icon(Icons.Rounded.Close, "Borrar búsqueda", tint = Color.White, modifier = Modifier.size(14.dp))
+                Icon(Icons.Rounded.Close, "Borrar búsqueda", tint = Frost.TextPrimary, modifier = Modifier.size(14.dp))
             }
         }
     }
