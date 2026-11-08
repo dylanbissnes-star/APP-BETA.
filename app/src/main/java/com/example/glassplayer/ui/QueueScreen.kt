@@ -1,9 +1,10 @@
 package com.example.glassplayer.ui
 
-import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.material.icons.Icons
@@ -11,19 +12,26 @@ import androidx.compose.material.icons.rounded.Close
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import com.example.glassplayer.PlayerUiState
-import com.example.glassplayer.ui.components.GlassButton
-import com.example.glassplayer.ui.components.GlassPill
+import com.example.glassplayer.ui.components.ActionPill
+import com.example.glassplayer.ui.components.CoverThumb
+import com.example.glassplayer.ui.components.EqBars
+import com.example.glassplayer.ui.components.RoundButton
 import com.example.glassplayer.ui.components.ScreenHeader
 import com.example.glassplayer.ui.components.TrackRow
+import com.example.glassplayer.ui.components.card
 import com.example.glassplayer.ui.theme.Frost
 
 /**
- * Pantalla "Cola de reproduccion":
- *  - Reproduciendo ahora
+ * "Siguiente en la cola" (como "Playing Next" de la referencia):
+ *  - Reproduciendo ahora (tarjeta)
  *  - En cola: lo que agregaste deslizando en la biblioteca (sonara primero)
  *  - A continuacion: el resto de la lista actual
  */
@@ -40,27 +48,50 @@ fun QueueScreen(
     val queuedEnd = (state.currentIndex + 1 + state.queuedCount).coerceIn(queuedStart, tracks.size)
     val pending = tracks.size - queuedStart
 
-    Column(
-        modifier.fillMaxSize()
-    ) {
+    Column(modifier.fillMaxSize()) {
         ScreenHeader(
-            title = "Cola de reproducción",
+            title = "Siguiente",
             subtitle = "$pending por reproducir",
             trailing = {
-                if (state.queuedCount > 0) GlassPill("Vaciar cola", onClearQueued)
+                if (state.queuedCount > 0) ActionPill("Vaciar cola", onClearQueued)
             },
         )
 
         LazyColumn(
-            // Espacio inferior para que el dock flotante no tape la ultima fila
-            contentPadding = PaddingValues(start = 16.dp, end = 16.dp, top = 4.dp, bottom = 176.dp),
-            verticalArrangement = Arrangement.spacedBy(10.dp),
+            // Espacio inferior para el mini reproductor y la barra de pestanas
+            contentPadding = PaddingValues(start = 20.dp, end = 20.dp, top = 0.dp, bottom = 168.dp),
         ) {
             // Reproduciendo ahora
             state.current?.let { now ->
                 item(key = "h-now") { SectionLabel("Reproduciendo ahora") }
                 item(key = "now") {
-                    TrackRow(now, isCurrent = true, playing = state.isPlaying, onClick = {})
+                    Row(
+                        Modifier
+                            .fillMaxWidth()
+                            .card(RoundedCornerShape(20.dp), raised = true)
+                            .padding(10.dp),
+                        verticalAlignment = Alignment.CenterVertically,
+                    ) {
+                        CoverThumb(now.artUri, 58.dp, corner = 14.dp)
+                        Column(Modifier.weight(1f).padding(horizontal = 14.dp)) {
+                            Text(
+                                now.title,
+                                color = Frost.Accent,
+                                fontSize = 16.sp,
+                                fontWeight = FontWeight.SemiBold,
+                                maxLines = 1,
+                                overflow = TextOverflow.Ellipsis,
+                            )
+                            Text(
+                                now.artist,
+                                color = Frost.TextSecondary,
+                                fontSize = 13.sp,
+                                maxLines = 1,
+                                overflow = TextOverflow.Ellipsis,
+                            )
+                        }
+                        EqBars(active = state.isPlaying, color = Frost.Accent, modifier = Modifier.padding(end = 8.dp))
+                    }
                 }
             }
 
@@ -71,8 +102,8 @@ fun QueueScreen(
                     Text(
                         "Nada en cola. Desliza una canción a la izquierda en la biblioteca para añadirla.",
                         style = MaterialTheme.typography.bodyMedium,
-                        color = Frost.content(0.72f),
-                        modifier = Modifier.padding(horizontal = 4.dp, vertical = 4.dp),
+                        color = Frost.TextSecondary,
+                        modifier = Modifier.padding(vertical = 4.dp),
                     )
                 }
             }
@@ -85,7 +116,7 @@ fun QueueScreen(
             if (queuedEnd < tracks.size) {
                 item(key = "h-upcoming") {
                     SectionLabel(
-                        if (state.shuffle) "A continuación (aleatorio: el orden puede variar)"
+                        if (state.shuffle) "A continuación · aleatorio, el orden puede variar"
                         else "A continuación"
                     )
                 }
@@ -112,7 +143,7 @@ private fun QueueRow(
         onClick = { onJump(index) },
         modifier = modifier,
         trailing = {
-            GlassButton(Icons.Rounded.Close, "Quitar de la cola", { onRemove(index) }, size = 36.dp)
+            RoundButton(Icons.Rounded.Close, "Quitar de la cola", { onRemove(index) }, size = 34.dp, iconSize = 16.dp)
         },
     )
 }
@@ -121,8 +152,9 @@ private fun QueueRow(
 private fun SectionLabel(text: String) {
     Text(
         text,
-        style = MaterialTheme.typography.titleMedium,
         color = Frost.TextPrimary,
-        modifier = Modifier.padding(start = 4.dp, top = 12.dp, bottom = 2.dp),
+        fontSize = 18.sp,
+        fontWeight = FontWeight.Bold,
+        modifier = Modifier.padding(top = 18.dp, bottom = 8.dp),
     )
 }

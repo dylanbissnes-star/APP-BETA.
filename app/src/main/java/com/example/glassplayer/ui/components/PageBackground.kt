@@ -20,7 +20,7 @@ import coil.request.ImageRequest
 
 /**
  * Fondo de la app:
- *  - por defecto, blanco (o casi negro en modo oscuro)
+ *  - por defecto, gris casi blanco (o casi negro en modo oscuro)
  *  - cuando hay una cancion elegida (`showArt`), su portada ocupa toda la pantalla, muy
  *    desenfocada y con un velo oscuro para que el texto se lea; cambia con un fundido
  * El desenfoque es real en Android 12+; antes, la portada pequena ampliada ya se ve suave.
@@ -33,7 +33,7 @@ fun PageBackground(
     modifier: Modifier = Modifier,
 ) {
     val base by animateColorAsState(
-        if (dark) Color(0xFF0E0E10) else Color(0xFFF7F7F8),
+        if (dark) Color(0xFF0E0E10) else Color(0xFFF4F4F6),
         tween(400), label = "pageBase",
     )
     val context = LocalContext.current

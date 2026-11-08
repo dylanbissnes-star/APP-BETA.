@@ -10,6 +10,7 @@ import androidx.media3.common.MediaItem
 import androidx.media3.common.Player
 import androidx.media3.session.MediaController
 import androidx.media3.session.SessionToken
+import com.example.glassplayer.data.FavoriteStore
 import com.example.glassplayer.data.Folder
 import com.example.glassplayer.data.FolderScanner
 import com.example.glassplayer.data.FolderStore
@@ -45,6 +46,9 @@ data class PlayerUiState(
     val loading: Boolean = true,
     val scanning: Boolean = false,
     val message: String? = null,
+
+    /** Ids de las canciones marcadas como favoritas (corazon). */
+    val favorites: Set<String> = emptySet(),
 ) {
     val current: Track? get() = tracks.getOrNull(currentIndex)
     val progress: Float
@@ -62,7 +66,7 @@ data class PlayerUiState(
 
 class PlayerViewModel(app: Application) : AndroidViewModel(app) {
 
-    private val _state = MutableStateFlow(PlayerUiState())
+    private val _state = MutableStateFlow(PlayerUiState(favorites = FavoriteStore.load(app)))
     val state: StateFlow<PlayerUiState> = _state.asStateFlow()
 
     private var controller: MediaController? = null
@@ -195,6 +199,13 @@ class PlayerViewModel(app: Application) : AndroidViewModel(app) {
     fun selectSource(id: String) = _state.update { it.copy(selectedSource = id) }
 
     fun clearMessage() = _state.update { it.copy(message = null) }
+
+    /** Marca o desmarca una cancion como favorita y lo guarda. */
+    fun toggleFavorite(trackId: String) {
+        val next = _state.value.favorites.let { if (trackId in it) it - trackId else it + trackId }
+        FavoriteStore.save(getApplication(), next)
+        _state.update { it.copy(favorites = next) }
+    }
 
     /** Carga la biblioteca en el reproductor la primera vez (si no hay ya algo sonando). */
     private fun tryInitQueue() {

@@ -54,8 +54,8 @@ fun GlassSearchField(
         modifier
             .fillMaxWidth()
             .clip(shape)
-            .background(Frost.content(0.18f))
-            .border(1.dp, Frost.TextPrimary.copy(alpha = borderAlpha), shape)
+            .background(Frost.SurfaceHigh)
+            .border(1.dp, if (focused) Frost.Accent.copy(alpha = borderAlpha) else Frost.Outline, shape)
             .padding(horizontal = 16.dp, vertical = 12.dp),
         verticalAlignment = Alignment.CenterVertically,
     ) {

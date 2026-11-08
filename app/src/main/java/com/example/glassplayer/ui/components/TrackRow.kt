@@ -7,10 +7,12 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.rounded.Favorite
+import androidx.compose.material.icons.rounded.FavoriteBorder
 import androidx.compose.material.icons.rounded.MusicNote
-import androidx.compose.material.icons.rounded.PlayArrow
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
@@ -18,6 +20,8 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.drawBehind
+import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
@@ -25,6 +29,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import coil.compose.AsyncImage
 import com.example.glassplayer.data.Track
 import com.example.glassplayer.ui.theme.Frost
@@ -42,7 +47,7 @@ fun CoverThumb(artUri: Any?, size: Dp, corner: Dp = 12.dp, modifier: Modifier = 
         modifier
             .size(size)
             .clip(RoundedCornerShape(corner))
-            .background(Brush.linearGradient(listOf(Color(0xFFB69CFF), Color(0xFF6C7BFF)))),
+            .background(Brush.linearGradient(listOf(Color(0xFF6C7BFF), Color(0xFF9B5CF6)))),
         contentAlignment = Alignment.Center,
     ) {
         Icon(
@@ -62,8 +67,9 @@ fun CoverThumb(artUri: Any?, size: Dp, corner: Dp = 12.dp, modifier: Modifier = 
 }
 
 /**
- * Fila de cancion en cristal (portada, titulo, artista y un triangulo de "reproducir" a la derecha,
- * como en la referencia). La usan la biblioteca, la busqueda y la cola.
+ * Fila de cancion estilo tabla (como "Top 50" de la referencia): numero opcional, portada,
+ * titulo y artista, tiempo y corazon de favorito, con una linea fina de separacion.
+ * La usan inicio, biblioteca, busqueda, favoritos, artistas y la cola.
  */
 @Composable
 fun TrackRow(
@@ -72,18 +78,33 @@ fun TrackRow(
     onClick: () -> Unit,
     modifier: Modifier = Modifier,
     playing: Boolean = false,
+    index: Int? = null,
+    favorite: Boolean = false,
+    onFavorite: (() -> Unit)? = null,
     trailing: (@Composable () -> Unit)? = null,
 ) {
-    val shape = RoundedCornerShape(20.dp)
+    val line = Frost.Outline
+    val accent = Frost.Accent
     Row(
         modifier
             .fillMaxWidth()
-            .pressClick(onClick, pressedScale = 0.97f)
-            .glass(shape, strength = if (isCurrent) 1.7f else 0.8f, darkness = 0.04f)
-            .padding(8.dp),
+            .background(Frost.Bg)
+            .pressClick(onClick, pressedScale = 0.985f)
+            .drawBehind {
+                drawLine(line, Offset(0f, size.height), Offset(size.width, size.height), 1f)
+            }
+            .padding(vertical = 8.dp),
         verticalAlignment = Alignment.CenterVertically,
     ) {
-        CoverThumb(track.artUri, 50.dp, corner = 14.dp)
+        if (index != null) {
+            Text(
+                String.format(Locale.US, "%02d", index),
+                color = Frost.TextTertiary,
+                fontSize = 13.sp,
+                modifier = Modifier.width(30.dp),
+            )
+        }
+        CoverThumb(track.artUri, 46.dp, corner = 12.dp)
         Column(
             Modifier
                 .weight(1f)
@@ -93,7 +114,7 @@ fun TrackRow(
                 track.title,
                 style = MaterialTheme.typography.titleMedium,
                 fontWeight = FontWeight.Medium,
-                color = Frost.TextPrimary,
+                color = if (isCurrent) accent else Frost.TextPrimary,
                 maxLines = 1,
                 overflow = TextOverflow.Ellipsis,
             )
@@ -106,17 +127,27 @@ fun TrackRow(
             )
         }
         if (trailing != null) {
-            Box(Modifier.padding(start = 8.dp)) { trailing() }
-        } else if (isCurrent) {
-            EqBars(active = playing, modifier = Modifier.padding(end = 10.dp))
+            trailing()
         } else {
-            Icon(
-                Icons.Rounded.PlayArrow, "Reproducir",
-                tint = Frost.content(0.92f),
-                modifier = Modifier
-                    .padding(end = 8.dp)
-                    .size(26.dp),
-            )
+            if (isCurrent) {
+                EqBars(active = playing, color = accent, modifier = Modifier.padding(end = 8.dp))
+            } else if (track.durationMs > 0) {
+                Text(
+                    formatTime(track.durationMs),
+                    color = Frost.TextTertiary,
+                    fontSize = 12.sp,
+                    modifier = Modifier.padding(end = 4.dp),
+                )
+            }
+            if (onFavorite != null) {
+                PlainIconButton(
+                    if (favorite) Icons.Rounded.Favorite else Icons.Rounded.FavoriteBorder,
+                    if (favorite) "Quitar de favoritos" else "Añadir a favoritos",
+                    onFavorite,
+                    size = 38.dp, iconSize = 20.dp,
+                    tint = if (favorite) accent else Frost.TextTertiary,
+                )
+            }
         }
     }
 }
