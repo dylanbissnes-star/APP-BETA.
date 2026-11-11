@@ -73,6 +73,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.ColorFilter
 import androidx.compose.ui.graphics.lerp
 import androidx.compose.ui.graphics.toArgb
 import androidx.compose.ui.platform.LocalContext
@@ -472,6 +473,7 @@ private fun TopBar(dark: Boolean, onMenu: () -> Unit, onSettings: () -> Unit, on
             painter = painterResource(R.drawable.logo_mark),
             contentDescription = null,
             modifier = Modifier.size(28.dp),
+            colorFilter = ColorFilter.tint(Frost.TextPrimary),
         )
         Spacer(Modifier.width(8.dp))
         Text(

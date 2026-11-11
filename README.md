@@ -1,4 +1,4 @@
-# GlassPlayer
+# ProjectPolaris
 
 Reproductor de música para Android con una UI oscura y sólida (tarjetas con borde fino, sin cristal),
 inspirada en apps de música modernas. Kotlin + Jetpack Compose + Media3 (ExoPlayer).
