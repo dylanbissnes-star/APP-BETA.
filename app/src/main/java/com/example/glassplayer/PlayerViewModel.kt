@@ -16,10 +16,14 @@ import com.example.glassplayer.data.FolderScanner
 import com.example.glassplayer.data.FolderStore
 import com.example.glassplayer.data.SOURCE_ALL
 import com.example.glassplayer.data.SOURCE_DEMO
+import com.example.glassplayer.data.LyricsRepository
+import com.example.glassplayer.data.LyricsState
 import com.example.glassplayer.data.Track
 import com.example.glassplayer.data.TrackRepository
 import com.example.glassplayer.data.toTrack
 import com.google.common.util.concurrent.MoreExecutors
+import kotlinx.coroutines.CancellationException
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -68,6 +72,11 @@ class PlayerViewModel(app: Application) : AndroidViewModel(app) {
 
     private val _state = MutableStateFlow(PlayerUiState(favorites = FavoriteStore.load(app)))
     val state: StateFlow<PlayerUiState> = _state.asStateFlow()
+
+    private val _lyrics = MutableStateFlow<LyricsState>(LyricsState.Idle)
+    /** Letra de la cancion para la que se pidio (se carga al abrir las letras en el reproductor). */
+    val lyrics: StateFlow<LyricsState> = _lyrics.asStateFlow()
+    private var lyricsJob: Job? = null
 
     private var controller: MediaController? = null
     private var libraryReady = false
@@ -205,6 +214,42 @@ class PlayerViewModel(app: Application) : AndroidViewModel(app) {
         val next = _state.value.favorites.let { if (trackId in it) it - trackId else it + trackId }
         FavoriteStore.save(getApplication(), next)
         _state.update { it.copy(favorites = next) }
+    }
+
+    /** Marca (`on = true`) o desmarca como favoritas todas estas canciones. */
+    fun setFavorites(trackIds: Collection<String>, on: Boolean) {
+        val cur = _state.value.favorites
+        val next = if (on) cur + trackIds else cur - trackIds.toSet()
+        FavoriteStore.save(getApplication(), next)
+        _state.update { it.copy(favorites = next) }
+    }
+
+    /** Busca la letra de `track` (la guarda en el telefono). `force` ignora lo guardado. */
+    fun loadLyrics(track: Track, force: Boolean = false) {
+        val cur = _lyrics.value
+        val same = cur.trackId == track.id
+        if (!force && same && cur !is LyricsState.Failed) return
+        lyricsJob?.cancel()
+        _lyrics.value = LyricsState.Loading(track.id)
+        lyricsJob = viewModelScope.launch {
+            _lyrics.value = try {
+                val found = LyricsRepository.load(getApplication(), track, force)
+                if (found == null) LyricsState.Missing(track.id) else LyricsState.Ready(track.id, found)
+            } catch (e: CancellationException) {
+                throw e
+            } catch (_: Exception) {
+                LyricsState.Failed(track.id)
+            }
+        }
+    }
+
+    fun clearLyricsCache() {
+        viewModelScope.launch {
+            LyricsRepository.clearCache(getApplication())
+            lyricsJob?.cancel()
+            _lyrics.value = LyricsState.Idle
+            _state.update { it.copy(message = "Letras guardadas borradas") }
+        }
     }
 
     /** Carga la biblioteca en el reproductor la primera vez (si no hay ya algo sonando). */

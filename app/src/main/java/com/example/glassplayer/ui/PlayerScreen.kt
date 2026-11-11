@@ -9,6 +9,7 @@ import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.animation.AnimatedContent
 import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.Crossfade
 import androidx.compose.animation.core.FastOutSlowInEasing
 import androidx.compose.animation.core.tween
 import androidx.compose.animation.fadeIn
@@ -31,6 +32,7 @@ import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.statusBarsPadding
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.pager.rememberPagerState
 import androidx.compose.foundation.rememberScrollState
@@ -48,6 +50,7 @@ import androidx.compose.material.icons.rounded.Menu
 import androidx.compose.material.icons.rounded.MusicNote
 import androidx.compose.material.icons.rounded.Person
 import androidx.compose.material.icons.rounded.Search
+import androidx.compose.material.icons.rounded.Settings
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.DrawerValue
 import androidx.compose.material3.MaterialTheme
@@ -68,6 +71,10 @@ import androidx.compose.runtime.snapshotFlow
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.shadow
+import androidx.compose.ui.graphics.Brush
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.lerp
+import androidx.compose.ui.graphics.toArgb
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalView
 import androidx.compose.ui.res.painterResource
@@ -81,32 +88,36 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.example.glassplayer.PlayerUiState
 import com.example.glassplayer.PlayerViewModel
 import com.example.glassplayer.R
+import com.example.glassplayer.data.LyricsState
 import com.example.glassplayer.data.SOURCE_ALL
+import com.example.glassplayer.data.SettingsStore
 import com.example.glassplayer.data.Track
 import com.example.glassplayer.ui.components.AppDrawerContent
 import com.example.glassplayer.ui.components.BottomTabBar
 import com.example.glassplayer.ui.components.CoverCarousel
 import com.example.glassplayer.ui.components.DarkModeToggle
 import com.example.glassplayer.ui.components.DrawerEntry
+import com.example.glassplayer.ui.components.LyricsPanel
 import com.example.glassplayer.ui.components.MiniPlayer
 import com.example.glassplayer.ui.components.NowPlayingInfo
 import com.example.glassplayer.ui.components.PageBackground
 import com.example.glassplayer.ui.components.PlayerControls
+import com.example.glassplayer.ui.components.PlainIconButton
 import com.example.glassplayer.ui.components.RoundButton
 import com.example.glassplayer.ui.components.TabBarHeight
 import com.example.glassplayer.ui.components.TabItem
 import com.example.glassplayer.ui.components.card
 import com.example.glassplayer.ui.components.rememberCoverPalette
-import com.example.glassplayer.ui.theme.DarkFrost
 import com.example.glassplayer.ui.theme.Frost
-import com.example.glassplayer.ui.theme.LightFrost
 import com.example.glassplayer.ui.theme.LocalFrost
+import com.example.glassplayer.ui.theme.accentPanelFrost
+import com.example.glassplayer.ui.theme.frostFor
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.drop
 import kotlinx.coroutines.launch
 
 /** Las 5 primeras son las pestanas de la barra inferior (en ese orden). Cola y Reproductor no tienen pestana. */
-private enum class Screen { Home, Explore, Favorites, Library, Search, Queue, Player }
+private enum class Screen { Home, Explore, Favorites, Library, Search, Queue, Player, Settings }
 
 /** Pagina de detalle que se abre encima de la pantalla actual. */
 private sealed interface Detail {
@@ -136,15 +147,19 @@ fun PlayerScreen(vm: PlayerViewModel) {
     var exploreTab by rememberSaveable { mutableStateOf(0) } // 0 = artistas, 1 = albumes
 
     // Modo oscuro (por defecto) o claro; se recuerda entre sesiones
-    val prefs = remember { context.getSharedPreferences("glass_prefs", Context.MODE_PRIVATE) }
-    var dark by rememberSaveable { mutableStateOf(prefs.getBoolean("dark", true)) }
-    val frost = if (dark) DarkFrost else LightFrost
+    var dark by rememberSaveable { mutableStateOf(SettingsStore.dark(context)) }
+    // Color de acento elegido por la persona (Ajustes) y si el reproductor se pinta con el
+    var accentArgb by rememberSaveable { mutableStateOf(SettingsStore.accent(context)) }
+    var playerAccentBg by rememberSaveable { mutableStateOf(SettingsStore.playerAccentBg(context)) }
+    val accentColor = Color(accentArgb)
+    val frost = frostFor(dark, accentColor)
+    val playerFrost = if (playerAccentBg) accentPanelFrost(accentColor) else frostFor(true, accentColor)
 
     val drawerState = rememberDrawerState(DrawerValue.Closed)
     val scope = rememberCoroutineScope()
 
     // Iconos de la barra de estado/navegacion legibles segun el fondo
-    val onDark = frost.onDark || screen == Screen.Player
+    val onDark = if (screen == Screen.Player) playerFrost.onDark else frost.onDark
     val view = LocalView.current
     SideEffect {
         val window = (view.context as? Activity)?.window ?: return@SideEffect
@@ -166,6 +181,7 @@ fun PlayerScreen(vm: PlayerViewModel) {
         scope.launch { drawerState.close() }
     }
     // Reproducir una lista y abrir el reproductor
+    val lyricsState by vm.lyrics.collectAsStateWithLifecycle()
     val playAndOpen: (List<Track>, Int) -> Unit = { list, index ->
         vm.playFromList(list, index)
         go(Screen.Player)
@@ -186,6 +202,7 @@ fun PlayerScreen(vm: PlayerViewModel) {
                         DrawerEntry(Icons.Rounded.Search, "Buscar", screen == Screen.Search) { go(Screen.Search); closeDrawer() },
                         DrawerEntry(Icons.Rounded.Favorite, "Favoritos", screen == Screen.Favorites) { go(Screen.Favorites); closeDrawer() },
                         DrawerEntry(Icons.AutoMirrored.Rounded.QueueMusic, "Cola", screen == Screen.Queue) { go(Screen.Queue); closeDrawer() },
+                        DrawerEntry(Icons.Rounded.Settings, "Ajustes", screen == Screen.Settings) { go(Screen.Settings); closeDrawer() },
                     ),
                     library = listOf(
                         DrawerEntry(Icons.Rounded.Album, "Álbumes", screen == Screen.Explore && exploreTab == 1) {
@@ -219,7 +236,8 @@ fun PlayerScreen(vm: PlayerViewModel) {
                     enter = fadeIn(tween(500)),
                     exit = fadeOut(tween(300)),
                 ) {
-                    PageBackground(dark = true, art = art, showArt = art != null)
+                    if (playerAccentBg) AccentBackdrop(accentColor)
+                    else PageBackground(dark = true, art = art, showArt = art != null)
                 }
 
                 val showTopBar = screen != Screen.Player && detail == null
@@ -229,9 +247,10 @@ fun PlayerScreen(vm: PlayerViewModel) {
                         TopBar(
                             dark = dark,
                             onMenu = { scope.launch { drawerState.open() } },
+                            onSettings = { go(Screen.Settings) },
                             onToggleDark = {
                                 dark = !dark
-                                prefs.edit().putBoolean("dark", dark).apply()
+                                SettingsStore.saveDark(context, dark)
                             },
                         )
                     }
@@ -269,6 +288,7 @@ fun PlayerScreen(vm: PlayerViewModel) {
                                         onBack = { detail = null },
                                         onPlay = playAndOpen,
                                         onToggleFavorite = vm::toggleFavorite,
+                                        onSetFavorites = vm::setFavorites,
                                     )
                                 }
                                 is Detail.Album -> {
@@ -285,6 +305,7 @@ fun PlayerScreen(vm: PlayerViewModel) {
                                         onBack = { detail = null },
                                         onPlay = playAndOpen,
                                         onToggleFavorite = vm::toggleFavorite,
+                                        onSetFavorites = vm::setFavorites,
                                     )
                                 }
                             }
@@ -347,14 +368,33 @@ fun PlayerScreen(vm: PlayerViewModel) {
                                 onClearQueued = vm::clearQueued,
                             )
                             // El reproductor siempre se dibuja oscuro, sobre la portada desenfocada
-                            Screen.Player -> CompositionLocalProvider(LocalFrost provides DarkFrost) {
+                            Screen.Player -> CompositionLocalProvider(LocalFrost provides playerFrost) {
                                 PlayerContent(
                                     state = state,
+                                    lyrics = lyricsState,
                                     vm = vm,
                                     onBack = { go(Screen.Home) },
                                     onOpenQueue = { go(Screen.Queue) },
                                 )
                             }
+                            Screen.Settings -> SettingsScreen(
+                                accent = accentColor,
+                                onAccent = {
+                                    accentArgb = it.toArgb()
+                                    SettingsStore.saveAccent(context, accentArgb)
+                                },
+                                dark = dark,
+                                onDark = {
+                                    dark = it
+                                    SettingsStore.saveDark(context, it)
+                                },
+                                playerAccentBg = playerAccentBg,
+                                onPlayerAccentBg = {
+                                    playerAccentBg = it
+                                    SettingsStore.savePlayerAccentBg(context, it)
+                                },
+                                onClearLyrics = vm::clearLyricsCache,
+                            )
                         }
                     }
                 }
@@ -381,7 +421,7 @@ fun PlayerScreen(vm: PlayerViewModel) {
                     }
                     BottomTabBar(
                         items = tabs,
-                        selectedIndex = if (screen == Screen.Queue || screen == Screen.Player) -1 else screen.ordinal,
+                        selectedIndex = if (screen.ordinal > Screen.Search.ordinal) -1 else screen.ordinal,
                         onSelect = { go(Screen.entries[it]) },
                     )
                 }
@@ -418,7 +458,7 @@ fun PlayerScreen(vm: PlayerViewModel) {
 
 /** Barra superior: menu lateral, logo y nombre, e interruptor claro/oscuro siempre visible. */
 @Composable
-private fun TopBar(dark: Boolean, onMenu: () -> Unit, onToggleDark: () -> Unit) {
+private fun TopBar(dark: Boolean, onMenu: () -> Unit, onSettings: () -> Unit, onToggleDark: () -> Unit) {
     Row(
         Modifier
             .fillMaxWidth()
@@ -441,19 +481,52 @@ private fun TopBar(dark: Boolean, onMenu: () -> Unit, onToggleDark: () -> Unit) 
             fontSize = 17.sp,
             fontWeight = FontWeight.SemiBold,
         )
+        PlainIconButton(Icons.Rounded.Settings, "Ajustes", onSettings, size = 40.dp, iconSize = 22.dp, tint = Frost.TextSecondary)
+        Spacer(Modifier.width(4.dp))
         DarkModeToggle(dark = dark, onToggle = onToggleDark)
     }
 }
 
-/** Reproductor (como la pantalla "Dashboard" de la referencia): portada grande, titulo con corazon, controles. */
+/** Fondo del reproductor cuando se pinta con el color de acento (degradado suave hacia un tono mas profundo). */
+@Composable
+private fun AccentBackdrop(accent: Color) {
+    Box(
+        Modifier
+            .fillMaxSize()
+            .background(Brush.verticalGradient(listOf(accent, lerp(accent, Color.Black, 0.22f))))
+    )
+}
+
+/** Nombre de la lista que suena: el album o artista si todas son del mismo, o «Mi música». */
+private fun listLabel(state: PlayerUiState): String {
+    val t = state.tracks
+    if (t.isEmpty()) return "Mi música"
+    if (t.all { it.id in state.favorites }) return "Mis favoritas"
+    t.map { it.album }.distinct().singleOrNull()?.takeIf { it.isNotBlank() }?.let { return it }
+    t.map { it.artist }.distinct().singleOrNull()?.takeIf { it.isNotBlank() }?.let { return it }
+    return "Mi música"
+}
+
+/**
+ * Reproductor (como la referencia amarilla): cabecera con la lista que suena, portada grande
+ * redondeada (o la letra en su lugar), titulo centrado, progreso, transporte y acciones.
+ */
 @Composable
 private fun PlayerContent(
     state: PlayerUiState,
+    lyrics: LyricsState,
     vm: PlayerViewModel,
     onBack: () -> Unit,
     onOpenQueue: () -> Unit,
 ) {
     val context = LocalContext.current
+    var showLyrics by rememberSaveable { mutableStateOf(false) }
+    val current = state.current
+
+    // La letra se busca solo cuando se abre el panel (y al cambiar de cancion con el panel abierto)
+    LaunchedEffect(showLyrics, current?.id) {
+        if (showLyrics && current != null) vm.loadLyrics(current)
+    }
 
     Column(
         Modifier
@@ -461,7 +534,7 @@ private fun PlayerContent(
             .statusBarsPadding()
             .padding(bottom = TabBarHeight), // espacio para la barra de pestanas
     ) {
-        // Barra: volver, titulo y cola
+        // Barra: volver, lista que suena y cola
         Row(
             Modifier
                 .fillMaxWidth()
@@ -470,12 +543,14 @@ private fun PlayerContent(
         ) {
             RoundButton(Icons.Rounded.KeyboardArrowDown, "Volver", onBack, iconSize = 26.dp)
             Text(
-                "Reproduciendo ahora",
-                modifier = Modifier.weight(1f),
+                "Lista: “${listLabel(state)}”",
+                modifier = Modifier.weight(1f).padding(horizontal = 8.dp),
                 textAlign = TextAlign.Center,
                 color = Frost.TextSecondary,
                 fontSize = 14.sp,
                 fontWeight = FontWeight.Medium,
+                maxLines = 1,
+                overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis,
             )
             RoundButton(
                 Icons.AutoMirrored.Rounded.QueueMusic, "Cola de reproducción", onOpenQueue,
@@ -512,14 +587,27 @@ private fun PlayerContent(
                 Modifier.verticalScroll(rememberScrollState()),
                 horizontalAlignment = Alignment.CenterHorizontally,
             ) {
-                CoverCarousel(state.tracks, pagerState)
+                // Portada o letra, en el mismo espacio
+                Crossfade(targetState = showLyrics, animationSpec = tween(300), label = "coverOrLyrics") { lyricsOn ->
+                    if (lyricsOn) {
+                        LyricsPanel(
+                            state = lyrics,
+                            positionMs = state.positionMs,
+                            onSeekTo = { ms ->
+                                if (state.durationMs > 0) vm.seekToFraction(ms / state.durationMs.toFloat())
+                            },
+                            onRetry = { current?.let { vm.loadLyrics(it, force = true) } },
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(horizontal = 20.dp)
+                                .height(272.dp),
+                        )
+                    } else {
+                        CoverCarousel(state.tracks, pagerState)
+                    }
+                }
                 Spacer(Modifier.height(18.dp))
-                val current = state.current
-                NowPlayingInfo(
-                    track = current,
-                    favorite = current != null && current.id in state.favorites,
-                    onFavorite = { current?.let { vm.toggleFavorite(it.id) } },
-                )
+                NowPlayingInfo(track = current)
                 Spacer(Modifier.height(10.dp))
                 PlayerControls(
                     state = state,
@@ -530,7 +618,10 @@ private fun PlayerContent(
                     onSeek = vm::seekToFraction,
                     onShuffle = vm::toggleShuffle,
                     onRepeat = vm::cycleRepeat,
-                    onOpenQueue = onOpenQueue,
+                    favorite = current != null && current.id in state.favorites,
+                    onFavorite = { current?.let { vm.toggleFavorite(it.id) } },
+                    lyricsOn = showLyrics,
+                    onLyrics = { showLyrics = !showLyrics },
                     onOpenDevices = { openAudioOutputs(context) },
                 )
             }

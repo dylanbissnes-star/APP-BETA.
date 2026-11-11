@@ -102,12 +102,12 @@ fun CountBadge(count: Int, modifier: Modifier = Modifier) {
         modifier
             .size(18.dp)
             .clip(CircleShape)
-            .background(Frost.Accent),
+            .background(Frost.AccentFill),
         contentAlignment = Alignment.Center,
     ) {
         Text(
             text = if (count > 9) "9+" else count.toString(),
-            color = Frost.Inverse,
+            color = Frost.OnAccent,
             fontSize = 10.sp,
             fontWeight = FontWeight.Bold,
         )
@@ -115,8 +115,9 @@ fun CountBadge(count: Int, modifier: Modifier = Modifier) {
 }
 
 /**
- * Boton alargado. `primary` = relleno con el color del texto (la pildora blanca "Play" de la
- * referencia); si no, relleno oscuro elevado con contorno ("View Playlist").
+ * Boton alargado. `accent` = relleno con el color de acento elegido (como "Shuffle" de la
+ * referencia amarilla); `primary` = relleno con el color del texto; si no, relleno elevado con contorno.
+ * `iconTint` tine el icono (p. ej. el corazon cuando ya es favorito).
  */
 @Composable
 fun ActionPill(
@@ -125,20 +126,32 @@ fun ActionPill(
     modifier: Modifier = Modifier,
     icon: ImageVector? = null,
     primary: Boolean = false,
+    accent: Boolean = false,
+    iconTint: Color? = null,
 ) {
     val shape = RoundedCornerShape(50)
-    val fg = if (primary) Frost.Inverse else Frost.TextPrimary
+    val filled = primary || accent
+    val fg = when {
+        accent -> Frost.OnAccent
+        primary -> Frost.Inverse
+        else -> Frost.TextPrimary
+    }
+    val fill = when {
+        accent -> Frost.AccentFill
+        primary -> Frost.TextPrimary
+        else -> Frost.SurfaceHigh
+    }
     Row(
         modifier
             .pressClick(onClick, pressedScale = 0.95f)
             .clip(shape)
-            .background(if (primary) Frost.TextPrimary else Frost.SurfaceHigh)
-            .then(if (primary) Modifier else Modifier.border(1.dp, Frost.Outline, shape))
+            .background(fill)
+            .then(if (filled) Modifier else Modifier.border(1.dp, Frost.Outline, shape))
             .padding(horizontal = 18.dp, vertical = 10.dp),
         verticalAlignment = Alignment.CenterVertically,
     ) {
         if (icon != null) {
-            Icon(icon, null, tint = fg, modifier = Modifier.size(18.dp))
+            Icon(icon, null, tint = iconTint ?: fg, modifier = Modifier.size(18.dp))
             Spacer(Modifier.width(8.dp))
         }
         Text(text, color = fg, fontSize = 14.sp, fontWeight = FontWeight.SemiBold)

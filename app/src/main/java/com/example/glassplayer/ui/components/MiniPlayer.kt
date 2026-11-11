@@ -85,7 +85,8 @@ fun MiniPlayer(
             PlainIconButton(
                 if (playing) Icons.Rounded.Pause else Icons.Rounded.PlayArrow,
                 if (playing) "Pausar" else "Reproducir",
-                onToggle, size = 44.dp, iconSize = 28.dp,
+                onToggle, size = 44.dp, iconSize = 30.dp,
+                tint = accent,
             )
         }
         // Linea de progreso

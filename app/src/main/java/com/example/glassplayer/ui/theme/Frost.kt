@@ -5,7 +5,10 @@ import androidx.compose.runtime.Immutable
 import androidx.compose.runtime.ReadOnlyComposable
 import androidx.compose.runtime.staticCompositionLocalOf
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.lerp
+import androidx.compose.ui.graphics.luminance
 import androidx.compose.ui.graphics.toArgb
+import androidx.core.graphics.ColorUtils
 import kotlin.math.max
 
 /**
@@ -23,8 +26,64 @@ class FrostColors(
     val surface: Color,
     val surfaceHigh: Color,
     val outline: Color,
+    /** Acento legible sobre este fondo (texto, iconos, lineas finas). */
     val accent: Color,
+    /** El acento elegido tal cual (rellenos: botones, insignias, el boton de play). */
+    val accentFill: Color,
+    /** Color de texto/icono que se lee sobre `accentFill`. */
+    val onAccent: Color,
 )
+
+/** Acento por defecto (amarillo ambar); la persona puede cambiarlo en Ajustes. */
+val DefaultAccent = Color(0xFFFFC21A)
+
+/** Texto oscuro o claro, segun cual se lea mejor sobre `c`. */
+fun onAccentFor(c: Color): Color = if (c.luminance() > 0.5f) Color(0xFF111113) else Color.White
+
+/** Acerca el color a blanco/negro hasta que contraste lo suficiente con `bg`. */
+private fun Color.readableOn(bg: Color, min: Float = 3f): Color {
+    val target = if (bg.luminance() < 0.5f) Color.White else Color.Black
+    var c = this
+    var i = 0
+    while (ColorUtils.calculateContrast(c.toArgb(), bg.toArgb()) < min && i < 12) {
+        c = lerp(c, target, 0.12f)
+        i++
+    }
+    return c
+}
+
+/** Misma paleta con otro acento. */
+fun FrostColors.withAccent(color: Color) = FrostColors(
+    onDark = onDark, content = content, secondary = secondary, tertiary = tertiary,
+    inverse = inverse, bg = bg, surface = surface, surfaceHigh = surfaceHigh, outline = outline,
+    accent = color.readableOn(bg), accentFill = color, onAccent = onAccentFor(color),
+)
+
+/** Paleta clara u oscura con el acento elegido. */
+fun frostFor(dark: Boolean, accent: Color): FrostColors =
+    (if (dark) DarkFrost else LightFrost).withAccent(accent)
+
+/**
+ * Paleta para pantallas pintadas con el propio acento (el reproductor): texto e iconos del color
+ * que mejor se lee sobre el acento, y superficies translucidas.
+ */
+fun accentPanelFrost(accent: Color): FrostColors {
+    val fg = onAccentFor(accent)
+    return FrostColors(
+        onDark = fg == Color.White,
+        content = fg,
+        secondary = fg.copy(alpha = 0.62f),
+        tertiary = fg.copy(alpha = 0.42f),
+        inverse = accent,
+        bg = accent,
+        surface = fg.copy(alpha = 0.08f),
+        surfaceHigh = fg.copy(alpha = 0.10f),
+        outline = fg.copy(alpha = 0.16f),
+        accent = fg,
+        accentFill = fg,
+        onAccent = accent,
+    )
+}
 
 val LightFrost = FrostColors(
     onDark = false,
@@ -36,7 +95,9 @@ val LightFrost = FrostColors(
     surface = Color.White,
     surfaceHigh = Color(0xFFECECF0),
     outline = Color(0xFFE1E1E6),
-    accent = Color(0xFF6D4AE0),
+    accent = Color(0xFF8A6500),
+    accentFill = DefaultAccent,
+    onAccent = Color(0xFF111113),
 )
 
 val DarkFrost = FrostColors(
@@ -49,7 +110,9 @@ val DarkFrost = FrostColors(
     surface = Color(0xFF18181B),
     surfaceHigh = Color(0xFF232327),
     outline = Color(0xFF2C2C32),
-    accent = Color(0xFFB39DFF),
+    accent = DefaultAccent,
+    accentFill = DefaultAccent,
+    onAccent = Color(0xFF111113),
 )
 
 val LocalFrost = staticCompositionLocalOf { DarkFrost }
@@ -76,6 +139,12 @@ object Frost {
 
     /** Acento (pestana activa, corazon, canciones sonando). */
     val Accent: Color @Composable @ReadOnlyComposable get() = LocalFrost.current.accent
+
+    /** El acento elegido, para rellenos (botones, insignias, play). */
+    val AccentFill: Color @Composable @ReadOnlyComposable get() = LocalFrost.current.accentFill
+
+    /** Texto/icono sobre `AccentFill`. */
+    val OnAccent: Color @Composable @ReadOnlyComposable get() = LocalFrost.current.onAccent
 
     /** `true` si ahora se dibuja sobre una superficie oscura. */
     val OnDark: Boolean @Composable @ReadOnlyComposable get() = LocalFrost.current.onDark
