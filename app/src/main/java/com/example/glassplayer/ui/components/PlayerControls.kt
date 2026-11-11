@@ -25,6 +25,7 @@ import androidx.compose.material.icons.rounded.Shuffle
 import androidx.compose.material.icons.rounded.SkipNext
 import androidx.compose.material.icons.rounded.SkipPrevious
 import androidx.compose.material.icons.rounded.Speaker
+import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -44,11 +45,11 @@ import com.example.glassplayer.PlayerUiState
 import com.example.glassplayer.ui.theme.Frost
 
 /**
- * Controles del reproductor, como en la referencia:
- *  1. anterior / play-pausa / siguiente: simbolos blancos grandes, sin fondo
- *  2. barra de progreso fina (relleno de acento) con los tiempos en los extremos
- *  3. pastilla de cristal con aleatorio, repetir, salida de audio y cola
- * Entra con un fundido y un ligero deslizamiento.
+ * Controles del reproductor (como la referencia movil):
+ *  1. barra de progreso fina con los tiempos
+ *  2. anterior / play-pausa (circulo lleno) / siguiente
+ *  3. volumen
+ *  4. fila de acciones: aleatorio, repetir, salida de audio y cola
  */
 @Composable
 fun PlayerControls(
@@ -69,53 +70,65 @@ fun PlayerControls(
 
     AnimatedVisibility(
         visible = shown,
-        enter = fadeIn(tween(600)) + slideInVertically(tween(600)) { it / 6 },
+        enter = fadeIn(tween(500)) + slideInVertically(tween(500)) { it / 8 },
     ) {
         Column(
             modifier.fillMaxWidth(),
             horizontalAlignment = Alignment.CenterHorizontally,
         ) {
-            // Transporte (sin fondo)
-            Row(
-                horizontalArrangement = Arrangement.spacedBy(34.dp),
-                verticalAlignment = Alignment.CenterVertically,
-            ) {
-                PlainIconButton(Icons.Rounded.SkipPrevious, "Anterior", onPrevious, size = 64.dp, iconSize = 42.dp)
-                PlainIconButton(
-                    if (state.isPlaying) Icons.Rounded.Pause else Icons.Rounded.PlayArrow,
-                    if (state.isPlaying) "Pausar" else "Reproducir",
-                    onTogglePlay,
-                    size = 76.dp,
-                    iconSize = 58.dp,
-                )
-                PlainIconButton(Icons.Rounded.SkipNext, "Siguiente", onNext, size = 64.dp, iconSize = 42.dp)
-            }
-
             // Progreso
             ThinSlider(
                 value = state.progress,
                 onValueChange = onSeek,
                 fill = accent,
-                track = if (Frost.OnDark) Frost.content(0.80f) else Frost.content(0.15f),
-                modifier = Modifier.padding(horizontal = 22.dp, vertical = 2.dp),
+                track = Frost.content(0.18f),
+                modifier = Modifier.padding(horizontal = 24.dp),
             )
             Row(
                 Modifier
                     .fillMaxWidth()
-                    .padding(horizontal = 24.dp),
+                    .padding(horizontal = 26.dp),
                 horizontalArrangement = Arrangement.SpaceBetween,
             ) {
                 Text(formatTime(state.positionMs), style = MaterialTheme.typography.labelSmall, color = Frost.TextSecondary)
                 Text(formatTime(state.durationMs), style = MaterialTheme.typography.labelSmall, color = Frost.TextSecondary)
             }
 
-            // Pastilla de acciones
+            // Transporte
+            Row(
+                Modifier.padding(top = 8.dp),
+                horizontalArrangement = Arrangement.spacedBy(30.dp),
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                PlainIconButton(Icons.Rounded.SkipPrevious, "Anterior", onPrevious, size = 60.dp, iconSize = 40.dp)
+                Box(
+                    Modifier
+                        .size(70.dp)
+                        .pressClick(onTogglePlay, pressedScale = 0.92f)
+                        .clip(CircleShape)
+                        .background(Frost.TextPrimary),
+                    contentAlignment = Alignment.Center,
+                ) {
+                    Icon(
+                        if (state.isPlaying) Icons.Rounded.Pause else Icons.Rounded.PlayArrow,
+                        if (state.isPlaying) "Pausar" else "Reproducir",
+                        tint = Frost.Inverse,
+                        modifier = Modifier.size(38.dp),
+                    )
+                }
+                PlainIconButton(Icons.Rounded.SkipNext, "Siguiente", onNext, size = 60.dp, iconSize = 40.dp)
+            }
+
+            // Volumen
+            VolumeControl(Modifier.padding(start = 24.dp, end = 24.dp, top = 8.dp))
+
+            // Acciones
             Row(
                 Modifier
-                    .padding(top = 18.dp, start = 12.dp, end = 12.dp)
+                    .padding(top = 12.dp, start = 16.dp, end = 16.dp)
                     .fillMaxWidth()
-                    .glass(RoundedCornerShape(28.dp), strength = 1.1f, darkness = 0.10f)
-                    .padding(horizontal = 8.dp, vertical = 4.dp),
+                    .card(RoundedCornerShape(22.dp))
+                    .padding(horizontal = 8.dp, vertical = 2.dp),
                 horizontalArrangement = Arrangement.SpaceEvenly,
                 verticalAlignment = Alignment.CenterVertically,
             ) {
@@ -135,7 +148,7 @@ fun PlayerControls(
     }
 }
 
-/** Icono de la pastilla: tenue si esta apagado, blanco con un punto debajo si esta activo. */
+/** Icono de la fila de acciones: tenue si esta apagado, con el acento y un punto debajo si esta activo. */
 @Composable
 private fun PillIcon(
     icon: ImageVector,
@@ -144,11 +157,12 @@ private fun PillIcon(
     active: Boolean = false,
     badge: Int = 0,
 ) {
+    val accent = Frost.Accent
     Box(Modifier.size(48.dp), contentAlignment = Alignment.Center) {
         PlainIconButton(
             icon, description, onClick,
             size = 44.dp, iconSize = 24.dp,
-            tint = if (active) Frost.TextPrimary else Frost.content(0.62f),
+            tint = if (active) accent else Frost.TextSecondary,
         )
         if (active) {
             Box(
@@ -157,7 +171,7 @@ private fun PillIcon(
                     .offset(y = (-3).dp)
                     .size(4.dp)
                     .clip(CircleShape)
-                    .background(Frost.TextPrimary)
+                    .background(accent)
             )
         }
         if (badge > 0) {

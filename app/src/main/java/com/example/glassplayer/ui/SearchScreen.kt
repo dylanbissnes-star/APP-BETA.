@@ -33,6 +33,7 @@ import java.text.Normalizer
 fun SearchScreen(
     state: PlayerUiState,
     onPlay: (List<Track>, Int) -> Unit,
+    onToggleFavorite: (String) -> Unit,
     modifier: Modifier = Modifier,
 ) {
     var query by rememberSaveable { mutableStateOf("") }
@@ -57,15 +58,14 @@ fun SearchScreen(
         GlassSearchField(
             query = query,
             onQueryChange = { query = it },
-            modifier = Modifier.padding(horizontal = 16.dp, vertical = 14.dp),
+            modifier = Modifier.padding(horizontal = 20.dp, vertical = 12.dp),
         )
 
         when {
             query.isBlank() -> Hint("Escribe para buscar en tu música")
             results.isEmpty() -> Hint("Sin resultados para «${query.trim()}»")
             else -> LazyColumn(
-                contentPadding = PaddingValues(start = 16.dp, end = 16.dp, top = 4.dp, bottom = 176.dp),
-                verticalArrangement = Arrangement.spacedBy(10.dp),
+                contentPadding = PaddingValues(start = 20.dp, end = 20.dp, top = 4.dp, bottom = 168.dp),
             ) {
                 itemsIndexed(results, key = { _, t -> t.id }) { index, track ->
                     TrackRow(
@@ -73,6 +73,9 @@ fun SearchScreen(
                         isCurrent = track.id == currentId,
                         playing = state.isPlaying,
                         onClick = { onPlay(results, index) },
+                        index = index + 1,
+                        favorite = track.id in state.favorites,
+                        onFavorite = { onToggleFavorite(track.id) },
                     )
                 }
             }

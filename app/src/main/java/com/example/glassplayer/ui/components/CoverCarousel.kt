@@ -35,12 +35,12 @@ import com.example.glassplayer.data.Track
 import com.example.glassplayer.ui.theme.Frost
 import kotlin.math.abs
 
-private val CardWidth = 236.dp
+private val CardWidth = 256.dp
 
 /**
  * Carrusel con profundidad 3D: la portada activa va al centro, nitida y a tamano completo;
  * las vecinas quedan parcialmente detras, mas pequenas, mas tenues y desenfocadas (Android 12+).
- * Marco de cristal claro; las portadas conservan sus colores.
+ * Portadas grandes y redondeadas con sus colores.
  */
 @Composable
 fun CoverCarousel(
@@ -86,39 +86,31 @@ fun CoverCarousel(
     }
 }
 
-/** Tarjeta de cristal que enmarca solo la portada; el texto va debajo del carrusel. */
+/** Portada grande con esquinas redondeadas y sombra (sin marco); el texto va debajo del carrusel. */
 @Composable
 private fun CoverCard(track: Track, modifier: Modifier = Modifier) {
-    // Marco de cristal claro alrededor de la portada (como la portada de la referencia)
-    val shape = RoundedCornerShape(26.dp)
+    val shape = RoundedCornerShape(28.dp)
     Box(
         modifier = modifier
             .width(CardWidth)
-            .shadow(22.dp, shape, ambientColor = Frost.Tint, spotColor = Frost.Tint)
-            .glass(shape, strength = 1.9f, darkness = 0.04f)
-            .padding(8.dp),
+            .aspectRatio(1f)
+            .shadow(20.dp, shape, ambientColor = Frost.Tint, spotColor = Frost.Tint)
+            .clip(shape)
+            .background(Brush.linearGradient(listOf(Color(0xFF6C7BFF), Color(0xFF9B5CF6)))),
+        contentAlignment = Alignment.Center,
     ) {
-        Box(
-            Modifier
-                .fillMaxWidth()
-                .aspectRatio(1f)
-                .clip(RoundedCornerShape(19.dp))
-                .background(Brush.linearGradient(listOf(Color(0xFFB69CFF), Color(0xFF6C7BFF)))),
-            contentAlignment = Alignment.Center,
-        ) {
-            Icon(
-                Icons.Rounded.MusicNote, null,
-                tint = Color.White.copy(alpha = 0.80f),
-                modifier = Modifier.size(56.dp),
+        Icon(
+            Icons.Rounded.MusicNote, null,
+            tint = Color.White.copy(alpha = 0.80f),
+            modifier = Modifier.size(56.dp),
+        )
+        if (track.artUri != null) {
+            AsyncImage(
+                model = track.artUri,
+                contentDescription = track.title,
+                contentScale = ContentScale.Crop,
+                modifier = Modifier.matchParentSize(),
             )
-            if (track.artUri != null) {
-                AsyncImage(
-                    model = track.artUri,
-                    contentDescription = track.title,
-                    contentScale = ContentScale.Crop,
-                    modifier = Modifier.matchParentSize(),
-                )
-            }
         }
     }
 }
