@@ -13,5 +13,5 @@ dependencyResolutionManagement {
     }
 }
 
-rootProject.name = "GlassPlayer"
+rootProject.name = "ProjectPolaris"
 include(":app")

@@ -293,10 +293,10 @@ private fun FolderCard(entry: FolderEntry, onOpen: () -> Unit, onPlay: () -> Uni
                     .size(34.dp)
                     .pressClick(onPlay, pressedScale = 0.9f)
                     .clip(CircleShape)
-                    .background(Frost.Accent),
+                    .background(Frost.AccentFill),
                 contentAlignment = Alignment.Center,
             ) {
-                Icon(Icons.Rounded.PlayArrow, "Reproducir carpeta", tint = Frost.Inverse, modifier = Modifier.size(20.dp))
+                Icon(Icons.Rounded.PlayArrow, "Reproducir carpeta", tint = Frost.OnAccent, modifier = Modifier.size(20.dp))
             }
         }
     }

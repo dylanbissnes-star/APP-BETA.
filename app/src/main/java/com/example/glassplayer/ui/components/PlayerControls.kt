@@ -16,7 +16,9 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.rounded.QueueMusic
+import androidx.compose.material.icons.rounded.Favorite
+import androidx.compose.material.icons.rounded.FavoriteBorder
+import androidx.compose.material.icons.rounded.Lyrics
 import androidx.compose.material.icons.rounded.Pause
 import androidx.compose.material.icons.rounded.PlayArrow
 import androidx.compose.material.icons.rounded.Repeat
@@ -49,7 +51,7 @@ import com.example.glassplayer.ui.theme.Frost
  *  1. barra de progreso fina con los tiempos
  *  2. anterior / play-pausa (circulo lleno) / siguiente
  *  3. volumen
- *  4. fila de acciones: aleatorio, repetir, salida de audio y cola
+ *  4. fila de acciones: aleatorio, repetir, favorito, letras y salida de audio
  */
 @Composable
 fun PlayerControls(
@@ -61,7 +63,10 @@ fun PlayerControls(
     onSeek: (Float) -> Unit,
     onShuffle: () -> Unit,
     onRepeat: () -> Unit,
-    onOpenQueue: () -> Unit,
+    favorite: Boolean,
+    onFavorite: () -> Unit,
+    lyricsOn: Boolean,
+    onLyrics: () -> Unit,
     onOpenDevices: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
@@ -106,13 +111,13 @@ fun PlayerControls(
                         .size(70.dp)
                         .pressClick(onTogglePlay, pressedScale = 0.92f)
                         .clip(CircleShape)
-                        .background(Frost.TextPrimary),
+                        .background(Frost.AccentFill),
                     contentAlignment = Alignment.Center,
                 ) {
                     Icon(
                         if (state.isPlaying) Icons.Rounded.Pause else Icons.Rounded.PlayArrow,
                         if (state.isPlaying) "Pausar" else "Reproducir",
-                        tint = Frost.Inverse,
+                        tint = Frost.OnAccent,
                         modifier = Modifier.size(38.dp),
                     )
                 }
@@ -138,11 +143,13 @@ fun PlayerControls(
                     "Repetir", onRepeat,
                     active = state.repeatMode != Player.REPEAT_MODE_OFF,
                 )
-                PillIcon(Icons.Rounded.Speaker, "Salida de audio", onOpenDevices)
                 PillIcon(
-                    Icons.AutoMirrored.Rounded.QueueMusic, "Cola de reproducción", onOpenQueue,
-                    badge = state.queuedCount,
+                    if (favorite) Icons.Rounded.Favorite else Icons.Rounded.FavoriteBorder,
+                    if (favorite) "Quitar de favoritos" else "Añadir a favoritos",
+                    onFavorite, active = favorite,
                 )
+                PillIcon(Icons.Rounded.Lyrics, "Letra", onLyrics, active = lyricsOn)
+                PillIcon(Icons.Rounded.Speaker, "Salida de audio", onOpenDevices)
             }
         }
     }

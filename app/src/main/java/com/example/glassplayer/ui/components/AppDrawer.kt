@@ -29,6 +29,7 @@ import androidx.compose.ui.geometry.CornerRadius
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.ColorFilter
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
@@ -74,7 +75,10 @@ fun AppDrawerContent(
                 Modifier.padding(start = 8.dp, bottom = 8.dp),
                 verticalAlignment = Alignment.CenterVertically,
             ) {
-                Image(painterResource(R.drawable.logo_mark), null, Modifier.size(34.dp))
+                Image(
+                    painterResource(R.drawable.logo_mark), null, Modifier.size(34.dp),
+                    colorFilter = ColorFilter.tint(Frost.TextPrimary),
+                )
                 Spacer(Modifier.width(10.dp))
                 Text(
                     stringResource(R.string.app_name),
