@@ -221,38 +221,38 @@ private fun SourceChip(
     onClick: () -> Unit,
     onRemove: (() -> Unit)?,
 ) {
-    val shape = RoundedCornerShape(50)
+    val shape = RoundedCornerShape(12.dp)
     Row(
         Modifier
             .pressClick(onClick, pressedScale = 0.95f)
             .clip(shape)
-            .background(if (selected) Frost.TextPrimary else Frost.SurfaceHigh)
+            .background(if (selected) Frost.AccentFill else Frost.SurfaceHigh)
             .then(if (selected) Modifier else Modifier.border(1.dp, Frost.Outline, shape))
             .padding(start = 14.dp, end = if (onRemove != null) 8.dp else 14.dp, top = 8.dp, bottom = 8.dp),
         verticalAlignment = Alignment.CenterVertically,
     ) {
         Text(
             chip.label,
-            color = if (selected) Frost.Inverse else Frost.TextSecondary,
+            color = if (selected) Frost.OnAccent else Frost.TextSecondary,
             fontSize = 13.sp,
             fontWeight = FontWeight.SemiBold,
             maxLines = 1,
         )
         Text(
             "  ${chip.count}",
-            color = if (selected) Frost.Inverse.copy(alpha = 0.6f) else Frost.TextTertiary,
+            color = if (selected) Frost.OnAccent.copy(alpha = 0.6f) else Frost.TextTertiary,
             fontSize = 12.sp,
         )
         if (onRemove != null) {
             Spacer(Modifier.width(6.dp))
             Icon(
                 Icons.Rounded.Close, "Quitar carpeta",
-                tint = Frost.Inverse,
+                tint = Frost.OnAccent,
                 modifier = Modifier
                     .size(18.dp)
                     .pressClick(onRemove, pressedScale = 0.85f)
                     .clip(CircleShape)
-                    .background(Frost.Inverse.copy(alpha = 0.15f))
+                    .background(Frost.OnAccent.copy(alpha = 0.15f))
                     .padding(2.dp),
             )
         }

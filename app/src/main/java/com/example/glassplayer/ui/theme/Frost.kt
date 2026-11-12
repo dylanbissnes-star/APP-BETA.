@@ -14,8 +14,8 @@ import kotlin.math.max
 
 /**
  * Paleta "Polaris". Dos estilos, ambos derivados del color de acento elegido:
- *  - Oscuro ("Pulse"): degradado profundo del tono del acento, tarjetas de vidrio translucidas,
- *    texto blanco y botones blancos.
+ *  - Oscuro ("Neon"): negro con cuadricula tenue, tarjetas gris oscuro con contorno fino y el
+ *    acento en neon para botones, titulares y detalles.
  *  - Claro ("Soft"): fondo gris suave, tarjetas blancas con sombra, tinta oscura del tono del
  *    acento y botones con el acento.
  */
@@ -43,8 +43,8 @@ class FrostColors(
     val onAccent: Color,
 )
 
-/** Acento por defecto (rosa intenso); la persona puede cambiarlo en Ajustes. */
-val DefaultAccent = Color(0xFFF0189E)
+/** Acento por defecto (verde neon); la persona puede cambiarlo en Ajustes. */
+val DefaultAccent = Color(0xFFC6F135)
 
 /** Texto oscuro o claro, segun cual se lea mejor sobre `c`. */
 fun onAccentFor(c: Color): Color = if (c.luminance() > 0.5f) Color(0xFF111113) else Color.White
@@ -74,32 +74,24 @@ fun frostFor(dark: Boolean, accent: Color): FrostColors {
 }
 
 private fun darkPulse(accent: Color, h: Float, gray: Boolean, s: Float): FrostColors {
-    val sat = if (gray) s else s.coerceIn(0.6f, 0.95f)
-    val top = hsvColor(h, sat, 0.24f)
-    val mid = hsvColor(h, sat, 0.42f)
-    // Abajo el color es mas vivo, pero se oscurece lo justo para que el texto blanco se lea
-    var v = 0.86f
-    var bottom = hsvColor(h, sat, v)
-    while (bottom.luminance() > 0.27f && v > 0.3f) {
-        v -= 0.04f
-        bottom = hsvColor(h, sat, v)
-    }
-    val deep = hsvColor(h, sat, 0.27f)
+    // Negro casi puro con un leve matiz del acento; el acento (neon) va en botones, titulares y detalles
+    val black = Color(0xFF0B0B0B)
+    val onFill = onAccentFor(accent)
     return FrostColors(
         onDark = true,
         content = Color.White,
-        secondary = Color.White.copy(alpha = 0.76f),
-        tertiary = Color.White.copy(alpha = 0.52f),
-        inverse = deep,
-        bg = mid,
-        bgColors = listOf(top, mid, bottom),
-        surface = Color.White.copy(alpha = 0.12f),
-        surfaceHigh = Color.White.copy(alpha = 0.18f),
-        outline = Color.White.copy(alpha = 0.22f),
-        floating = lerp(bottom, Color.White, 0.16f),
-        accent = Color.White,
-        accentFill = Color.White,
-        onAccent = deep,
+        secondary = Color.White.copy(alpha = 0.66f),
+        tertiary = Color.White.copy(alpha = 0.40f),
+        inverse = black,
+        bg = black,
+        bgColors = listOf(black, black),
+        surface = Color(0xFF151515),
+        surfaceHigh = Color(0xFF1F1F1F),
+        outline = Color.White.copy(alpha = 0.16f),
+        floating = Color(0xFF181818),
+        accent = accent.readableOn(black, 4.5f),
+        accentFill = accent,
+        onAccent = onFill,
     )
 }
 

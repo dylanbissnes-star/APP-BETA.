@@ -45,12 +45,12 @@ fun CoverThumb(artUri: Any?, size: Dp, corner: Dp = 12.dp, modifier: Modifier = 
         modifier
             .size(size)
             .clip(RoundedCornerShape(corner))
-            .background(Brush.linearGradient(listOf(Color(0xFF6C7BFF), Color(0xFF9B5CF6)))),
+            .background(Brush.linearGradient(listOf(Frost.SurfaceHigh, Frost.Surface))),
         contentAlignment = Alignment.Center,
     ) {
         Icon(
             Icons.Rounded.MusicNote, null,
-            tint = Color.White.copy(alpha = 0.80f),
+            tint = Frost.TextTertiary,
             modifier = Modifier.size(size * 0.45f),
         )
         if (artUri != null) {
@@ -65,8 +65,8 @@ fun CoverThumb(artUri: Any?, size: Dp, corner: Dp = 12.dp, modifier: Modifier = 
 }
 
 /**
- * Fila de cancion estilo tabla (como "Top 50" de la referencia): numero opcional, portada,
- * titulo y artista, tiempo y corazon de favorito, con una linea fina de separacion.
+ * Fila de cancion (como "Recently Listened" de la referencia neon): numero opcional, portada,
+ * titulo en negrita y artista, tiempo y corazon. La que suena se rellena con el acento.
  * La usan inicio, biblioteca, busqueda, favoritos, artistas y la cola.
  */
 @Composable
@@ -81,27 +81,28 @@ fun TrackRow(
     onFavorite: (() -> Unit)? = null,
     trailing: (@Composable () -> Unit)? = null,
 ) {
-    val accent = Frost.Accent
-    val shape = RoundedCornerShape(22.dp)
-    // Cada fila es una pildora (como "Music Collection" de la referencia); la que suena se eleva
+    val shape = RoundedCornerShape(14.dp)
+    val titleColor = if (isCurrent) Frost.OnAccent else Frost.TextPrimary
+    val subColor = if (isCurrent) Frost.OnAccent.copy(alpha = 0.72f) else Frost.TextSecondary
+    val dimColor = if (isCurrent) Frost.OnAccent.copy(alpha = 0.72f) else Frost.TextTertiary
     Row(
         modifier
-            .padding(vertical = 4.dp)
+            .padding(vertical = 3.dp)
             .fillMaxWidth()
             .pressClick(onClick, pressedScale = 0.985f)
-            .card(shape, raised = isCurrent)
-            .padding(start = if (index != null) 10.dp else 8.dp, end = 4.dp, top = 8.dp, bottom = 8.dp),
+            .then(if (isCurrent) Modifier.clip(shape).background(Frost.AccentFill) else Modifier.card(shape))
+            .padding(start = if (index != null) 10.dp else 8.dp, end = 4.dp, top = 7.dp, bottom = 7.dp),
         verticalAlignment = Alignment.CenterVertically,
     ) {
         if (index != null) {
             Text(
                 String.format(Locale.US, "%02d", index),
-                color = Frost.TextTertiary,
-                fontSize = 12.sp,
-                modifier = Modifier.width(26.dp),
+                color = dimColor,
+                fontSize = 11.sp,
+                modifier = Modifier.width(24.dp),
             )
         }
-        CoverThumb(track.artUri, 48.dp, corner = 15.dp)
+        CoverThumb(track.artUri, 44.dp, corner = 10.dp)
         Column(
             Modifier
                 .weight(1f)
@@ -110,15 +111,16 @@ fun TrackRow(
             Text(
                 track.title,
                 style = MaterialTheme.typography.titleMedium,
-                fontWeight = if (isCurrent) FontWeight.Bold else FontWeight.Medium,
-                color = if (isCurrent) accent else Frost.TextPrimary,
+                fontWeight = if (isCurrent) FontWeight.Bold else FontWeight.SemiBold,
+                fontSize = 14.sp,
+                color = titleColor,
                 maxLines = 1,
                 overflow = TextOverflow.Ellipsis,
             )
             Text(
                 track.artist,
                 style = MaterialTheme.typography.bodyMedium,
-                color = Frost.TextSecondary,
+                color = subColor,
                 maxLines = 1,
                 overflow = TextOverflow.Ellipsis,
             )
@@ -127,12 +129,12 @@ fun TrackRow(
             trailing()
         } else {
             if (isCurrent) {
-                EqBars(active = playing, color = accent, modifier = Modifier.padding(end = 8.dp))
+                EqBars(active = playing, color = Frost.OnAccent, modifier = Modifier.padding(end = 8.dp))
             } else if (track.durationMs > 0) {
                 Text(
                     formatTime(track.durationMs),
-                    color = Frost.TextTertiary,
-                    fontSize = 12.sp,
+                    color = dimColor,
+                    fontSize = 11.sp,
                     modifier = Modifier.padding(end = 4.dp),
                 )
             }
@@ -141,8 +143,8 @@ fun TrackRow(
                     if (favorite) Icons.Rounded.Favorite else Icons.Rounded.FavoriteBorder,
                     if (favorite) "Quitar de favoritos" else "Añadir a favoritos",
                     onFavorite,
-                    size = 38.dp, iconSize = 20.dp,
-                    tint = if (favorite) accent else Frost.TextTertiary,
+                    size = 38.dp, iconSize = 19.dp,
+                    tint = if (favorite) (if (isCurrent) Frost.OnAccent else Frost.Accent) else dimColor,
                 )
             }
         }
