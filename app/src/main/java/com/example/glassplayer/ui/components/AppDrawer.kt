@@ -63,7 +63,7 @@ fun AppDrawerContent(
 ) {
     ModalDrawerSheet(
         drawerShape = RoundedCornerShape(topEnd = 28.dp, bottomEnd = 28.dp),
-        drawerContainerColor = Frost.Surface,
+        drawerContainerColor = Frost.Floating,
         drawerContentColor = Frost.TextPrimary,
     ) {
         Column(

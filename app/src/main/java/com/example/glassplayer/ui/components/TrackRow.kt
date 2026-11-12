@@ -20,8 +20,6 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.draw.drawBehind
-import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
@@ -83,28 +81,27 @@ fun TrackRow(
     onFavorite: (() -> Unit)? = null,
     trailing: (@Composable () -> Unit)? = null,
 ) {
-    val line = Frost.Outline
     val accent = Frost.Accent
+    val shape = RoundedCornerShape(22.dp)
+    // Cada fila es una pildora (como "Music Collection" de la referencia); la que suena se eleva
     Row(
         modifier
+            .padding(vertical = 4.dp)
             .fillMaxWidth()
-            .background(Frost.Bg)
             .pressClick(onClick, pressedScale = 0.985f)
-            .drawBehind {
-                drawLine(line, Offset(0f, size.height), Offset(size.width, size.height), 1f)
-            }
-            .padding(vertical = 8.dp),
+            .card(shape, raised = isCurrent)
+            .padding(start = if (index != null) 10.dp else 8.dp, end = 4.dp, top = 8.dp, bottom = 8.dp),
         verticalAlignment = Alignment.CenterVertically,
     ) {
         if (index != null) {
             Text(
                 String.format(Locale.US, "%02d", index),
                 color = Frost.TextTertiary,
-                fontSize = 13.sp,
-                modifier = Modifier.width(30.dp),
+                fontSize = 12.sp,
+                modifier = Modifier.width(26.dp),
             )
         }
-        CoverThumb(track.artUri, 46.dp, corner = 12.dp)
+        CoverThumb(track.artUri, 48.dp, corner = 15.dp)
         Column(
             Modifier
                 .weight(1f)
@@ -113,7 +110,7 @@ fun TrackRow(
             Text(
                 track.title,
                 style = MaterialTheme.typography.titleMedium,
-                fontWeight = FontWeight.Medium,
+                fontWeight = if (isCurrent) FontWeight.Bold else FontWeight.Medium,
                 color = if (isCurrent) accent else Frost.TextPrimary,
                 maxLines = 1,
                 overflow = TextOverflow.Ellipsis,

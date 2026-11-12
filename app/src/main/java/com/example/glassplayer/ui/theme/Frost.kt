@@ -4,6 +4,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.Immutable
 import androidx.compose.runtime.ReadOnlyComposable
 import androidx.compose.runtime.staticCompositionLocalOf
+import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.lerp
 import androidx.compose.ui.graphics.luminance
@@ -12,8 +13,11 @@ import androidx.core.graphics.ColorUtils
 import kotlin.math.max
 
 /**
- * Paleta "Studio": superficies solidas (fondo, tarjetas, tarjetas elevadas y contorno fino),
- * texto y un acento. Dos variantes: oscura (por defecto, como las referencias) y clara.
+ * Paleta "Polaris". Dos estilos, ambos derivados del color de acento elegido:
+ *  - Oscuro ("Pulse"): degradado profundo del tono del acento, tarjetas de vidrio translucidas,
+ *    texto blanco y botones blancos.
+ *  - Claro ("Soft"): fondo gris suave, tarjetas blancas con sombra, tinta oscura del tono del
+ *    acento y botones con el acento.
  */
 @Immutable
 class FrostColors(
@@ -22,20 +26,25 @@ class FrostColors(
     val secondary: Color,
     val tertiary: Color,
     val inverse: Color,
+    /** Color medio del fondo (para calcular contrastes). */
     val bg: Color,
+    /** Colores del degradado vertical de fondo, de arriba a abajo. */
+    val bgColors: List<Color>,
     val surface: Color,
     val surfaceHigh: Color,
     val outline: Color,
+    /** Superficie opaca para barras y paneles flotantes (barra de pestanas, menu lateral, avisos). */
+    val floating: Color,
     /** Acento legible sobre este fondo (texto, iconos, lineas finas). */
     val accent: Color,
-    /** El acento elegido tal cual (rellenos: botones, insignias, el boton de play). */
+    /** Relleno de botones principales, insignias y el boton de play. */
     val accentFill: Color,
     /** Color de texto/icono que se lee sobre `accentFill`. */
     val onAccent: Color,
 )
 
-/** Acento por defecto (amarillo ambar); la persona puede cambiarlo en Ajustes. */
-val DefaultAccent = Color(0xFFFFC21A)
+/** Acento por defecto (rosa intenso); la persona puede cambiarlo en Ajustes. */
+val DefaultAccent = Color(0xFFF0189E)
 
 /** Texto oscuro o claro, segun cual se lea mejor sobre `c`. */
 fun onAccentFor(c: Color): Color = if (c.luminance() > 0.5f) Color(0xFF111113) else Color.White
@@ -52,68 +61,71 @@ private fun Color.readableOn(bg: Color, min: Float = 3f): Color {
     return c
 }
 
-/** Misma paleta con otro acento. */
-fun FrostColors.withAccent(color: Color) = FrostColors(
-    onDark = onDark, content = content, secondary = secondary, tertiary = tertiary,
-    inverse = inverse, bg = bg, surface = surface, surfaceHigh = surfaceHigh, outline = outline,
-    accent = color.readableOn(bg), accentFill = color, onAccent = onAccentFor(color),
-)
+private fun hsvColor(h: Float, s: Float, v: Float): Color =
+    Color.hsv(h.coerceIn(0f, 360f), s.coerceIn(0f, 1f), v.coerceIn(0f, 1f))
 
-/** Paleta clara u oscura con el acento elegido. */
-fun frostFor(dark: Boolean, accent: Color): FrostColors =
-    (if (dark) DarkFrost else LightFrost).withAccent(accent)
+/** Paleta clara u oscura derivada del acento elegido. */
+fun frostFor(dark: Boolean, accent: Color): FrostColors {
+    val hsv = FloatArray(3)
+    android.graphics.Color.colorToHSV(accent.toArgb(), hsv)
+    val h = hsv[0]
+    val gray = hsv[1] < 0.12f // un gris no tiene tono: el fondo tambien queda gris
+    return if (dark) darkPulse(accent, h, gray, hsv[1]) else lightSoft(accent, h, gray, hsv[1])
+}
 
-/**
- * Paleta para pantallas pintadas con el propio acento (el reproductor): texto e iconos del color
- * que mejor se lee sobre el acento, y superficies translucidas.
- */
-fun accentPanelFrost(accent: Color): FrostColors {
-    val fg = onAccentFor(accent)
+private fun darkPulse(accent: Color, h: Float, gray: Boolean, s: Float): FrostColors {
+    val sat = if (gray) s else s.coerceIn(0.6f, 0.95f)
+    val top = hsvColor(h, sat, 0.24f)
+    val mid = hsvColor(h, sat, 0.42f)
+    // Abajo el color es mas vivo, pero se oscurece lo justo para que el texto blanco se lea
+    var v = 0.86f
+    var bottom = hsvColor(h, sat, v)
+    while (bottom.luminance() > 0.27f && v > 0.3f) {
+        v -= 0.04f
+        bottom = hsvColor(h, sat, v)
+    }
+    val deep = hsvColor(h, sat, 0.27f)
     return FrostColors(
-        onDark = fg == Color.White,
-        content = fg,
-        secondary = fg.copy(alpha = 0.62f),
-        tertiary = fg.copy(alpha = 0.42f),
-        inverse = accent,
-        bg = accent,
-        surface = fg.copy(alpha = 0.08f),
-        surfaceHigh = fg.copy(alpha = 0.10f),
-        outline = fg.copy(alpha = 0.16f),
-        accent = fg,
-        accentFill = fg,
-        onAccent = accent,
+        onDark = true,
+        content = Color.White,
+        secondary = Color.White.copy(alpha = 0.76f),
+        tertiary = Color.White.copy(alpha = 0.52f),
+        inverse = deep,
+        bg = mid,
+        bgColors = listOf(top, mid, bottom),
+        surface = Color.White.copy(alpha = 0.12f),
+        surfaceHigh = Color.White.copy(alpha = 0.18f),
+        outline = Color.White.copy(alpha = 0.22f),
+        floating = lerp(bottom, Color.White, 0.16f),
+        accent = Color.White,
+        accentFill = Color.White,
+        onAccent = deep,
     )
 }
 
-val LightFrost = FrostColors(
-    onDark = false,
-    content = Color(0xFF111113),
-    secondary = Color(0xFF111113).copy(alpha = 0.62f),
-    tertiary = Color(0xFF111113).copy(alpha = 0.42f),
-    inverse = Color.White,
-    bg = Color(0xFFF4F4F6),
-    surface = Color.White,
-    surfaceHigh = Color(0xFFECECF0),
-    outline = Color(0xFFE1E1E6),
-    accent = Color(0xFF8A6500),
-    accentFill = DefaultAccent,
-    onAccent = Color(0xFF111113),
-)
+private fun lightSoft(accent: Color, h: Float, gray: Boolean, s: Float): FrostColors {
+    val ink = hsvColor(h, if (gray) 0f else s.coerceAtMost(0.6f), 0.20f)
+    val bg = Color(0xFFEDECEF)
+    return FrostColors(
+        onDark = false,
+        content = ink,
+        secondary = ink.copy(alpha = 0.64f),
+        tertiary = ink.copy(alpha = 0.44f),
+        inverse = Color.White,
+        bg = bg,
+        bgColors = listOf(Color(0xFFF4F3F6), Color(0xFFE6E5E9)),
+        surface = Color.White,
+        surfaceHigh = Color(0xFFE3E2E7),
+        outline = ink.copy(alpha = 0.08f),
+        floating = Color.White,
+        accent = accent.readableOn(bg),
+        accentFill = accent,
+        onAccent = onAccentFor(accent),
+    )
+}
 
-val DarkFrost = FrostColors(
-    onDark = true,
-    content = Color.White,
-    secondary = Color.White.copy(alpha = 0.62f),
-    tertiary = Color.White.copy(alpha = 0.42f),
-    inverse = Color(0xFF111113),
-    bg = Color(0xFF0E0E10),
-    surface = Color(0xFF18181B),
-    surfaceHigh = Color(0xFF232327),
-    outline = Color(0xFF2C2C32),
-    accent = DefaultAccent,
-    accentFill = DefaultAccent,
-    onAccent = Color(0xFF111113),
-)
+val DarkFrost = frostFor(true, DefaultAccent)
+val LightFrost = frostFor(false, DefaultAccent)
 
 val LocalFrost = staticCompositionLocalOf { DarkFrost }
 
@@ -127,6 +139,12 @@ object Frost {
 
     /** Fondo de pantalla. */
     val Bg: Color @Composable @ReadOnlyComposable get() = LocalFrost.current.bg
+
+    /** Degradado de fondo de pantalla. */
+    val BgBrush: Brush @Composable @ReadOnlyComposable get() = Brush.verticalGradient(LocalFrost.current.bgColors)
+
+    /** Superficie opaca de barras y paneles flotantes. */
+    val Floating: Color @Composable @ReadOnlyComposable get() = LocalFrost.current.floating
 
     /** Tarjetas y paneles. */
     val Surface: Color @Composable @ReadOnlyComposable get() = LocalFrost.current.surface

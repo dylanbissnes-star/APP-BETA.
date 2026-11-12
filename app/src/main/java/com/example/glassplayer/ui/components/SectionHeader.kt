@@ -33,13 +33,13 @@ fun SectionHeader(
         verticalAlignment = Alignment.Bottom,
     ) {
         Column {
-            Text(small, color = Frost.TextTertiary, fontSize = 13.sp)
-            Text(big, color = Frost.TextPrimary, fontSize = 26.sp, fontWeight = FontWeight.Bold)
+            Text(small, color = Frost.TextSecondary, fontSize = 13.sp)
+            Text(big, color = Frost.TextPrimary, fontSize = 24.sp, fontWeight = FontWeight.Bold, letterSpacing = (-0.4).sp)
         }
         if (seeAll != null) {
             Text(
                 "Ver todo",
-                color = Frost.TextSecondary,
+                color = Frost.TextPrimary,
                 fontSize = 13.sp,
                 modifier = Modifier
                     .pressClick(seeAll, pressedScale = 0.92f)

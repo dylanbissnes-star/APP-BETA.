@@ -102,13 +102,13 @@ fun PlayerControls(
             // Transporte
             Row(
                 Modifier.padding(top = 8.dp),
-                horizontalArrangement = Arrangement.spacedBy(30.dp),
+                horizontalArrangement = Arrangement.spacedBy(22.dp),
                 verticalAlignment = Alignment.CenterVertically,
             ) {
-                PlainIconButton(Icons.Rounded.SkipPrevious, "Anterior", onPrevious, size = 60.dp, iconSize = 40.dp)
+                RoundButton(Icons.Rounded.SkipPrevious, "Anterior", onPrevious, size = 54.dp, iconSize = 28.dp)
                 Box(
                     Modifier
-                        .size(70.dp)
+                        .size(76.dp)
                         .pressClick(onTogglePlay, pressedScale = 0.92f)
                         .clip(CircleShape)
                         .background(Frost.AccentFill),
@@ -118,10 +118,10 @@ fun PlayerControls(
                         if (state.isPlaying) Icons.Rounded.Pause else Icons.Rounded.PlayArrow,
                         if (state.isPlaying) "Pausar" else "Reproducir",
                         tint = Frost.OnAccent,
-                        modifier = Modifier.size(38.dp),
+                        modifier = Modifier.size(40.dp),
                     )
                 }
-                PlainIconButton(Icons.Rounded.SkipNext, "Siguiente", onNext, size = 60.dp, iconSize = 40.dp)
+                RoundButton(Icons.Rounded.SkipNext, "Siguiente", onNext, size = 54.dp, iconSize = 28.dp)
             }
 
             // Volumen
@@ -132,7 +132,7 @@ fun PlayerControls(
                 Modifier
                     .padding(top = 12.dp, start = 16.dp, end = 16.dp)
                     .fillMaxWidth()
-                    .card(RoundedCornerShape(22.dp))
+                    .card(RoundedCornerShape(26.dp))
                     .padding(horizontal = 8.dp, vertical = 2.dp),
                 horizontalArrangement = Arrangement.SpaceEvenly,
                 verticalAlignment = Alignment.CenterVertically,
