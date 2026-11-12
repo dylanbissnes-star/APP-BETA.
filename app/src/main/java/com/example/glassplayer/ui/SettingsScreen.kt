@@ -60,16 +60,16 @@ import kotlin.math.roundToInt
 
 /** Colores sugeridos; ademas se puede mezclar cualquiera con los deslizadores. */
 private val Presets = listOf(
-    Color(0xFFF0189E), // rosa intenso (por defecto)
-    Color(0xFFFF5A5F), // coral
-    Color(0xFFFF8A3D), // naranja
+    Color(0xFFC6F135), // verde neon (por defecto)
+    Color(0xFF4ADE80), // verde
     Color(0xFFFFC21A), // ambar
+    Color(0xFFFF8A3D), // naranja
+    Color(0xFFFF5A5F), // coral
+    Color(0xFFF0189E), // rosa intenso
     Color(0xFFB66DFF), // violeta
     Color(0xFF6C7BFF), // azul violeta
     Color(0xFF3DA5FF), // azul
     Color(0xFF22D3C5), // turquesa
-    Color(0xFF4ADE80), // verde
-    Color(0xFFC6F135), // lima
     Color(0xFFF2F2F2), // blanco
 )
 

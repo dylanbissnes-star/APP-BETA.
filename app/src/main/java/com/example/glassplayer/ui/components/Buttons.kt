@@ -129,18 +129,10 @@ fun ActionPill(
     accent: Boolean = false,
     iconTint: Color? = null,
 ) {
-    val shape = RoundedCornerShape(50)
+    val shape = RoundedCornerShape(14.dp)
     val filled = primary || accent
-    val fg = when {
-        accent -> Frost.OnAccent
-        primary -> Frost.Inverse
-        else -> Frost.TextPrimary
-    }
-    val fill = when {
-        accent -> Frost.AccentFill
-        primary -> Frost.TextPrimary
-        else -> Frost.SurfaceHigh
-    }
+    val fg = if (filled) Frost.OnAccent else Frost.TextPrimary
+    val fill = if (filled) Frost.AccentFill else Frost.SurfaceHigh
     Row(
         modifier
             .pressClick(onClick, pressedScale = 0.95f)

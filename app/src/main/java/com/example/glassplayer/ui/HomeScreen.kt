@@ -23,6 +23,9 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.Add
+import androidx.compose.material.icons.rounded.Shuffle
+import androidx.compose.material.icons.rounded.Search
+import androidx.compose.material.icons.automirrored.rounded.ArrowForward
 import androidx.compose.material.icons.rounded.CreateNewFolder
 import androidx.compose.material.icons.rounded.Favorite
 import androidx.compose.material.icons.rounded.MusicNote
@@ -58,20 +61,22 @@ import com.example.glassplayer.ui.components.TrackRow
 import com.example.glassplayer.ui.components.card
 import com.example.glassplayer.ui.components.pressClick
 import com.example.glassplayer.ui.theme.Frost
+import com.example.glassplayer.ui.theme.Script
 import java.util.Locale
 
 /**
- * Inicio (estilo Pulseplay):
- *  - Banner con la portada que se funde en el fondo, titular grande y botones
- *  - «Carpetas»: tarjetas con 3 portadas por carpeta + «Agregar carpeta»
- *  - «Favoritas»: tarjetas con portada completa y corazon
- *  - «Colección»: pildoras de cancion con tiempo y corazon
- *  - «Artistas»: lista numerada
+ * Inicio (estilo neon):
+ *  - Titular cursivo «¿Qué vas a escuchar hoy?» con una nota musical
+ *  - Buscador (abre Buscar) y boton para reproducir todo en aleatorio
+ *  - «Descubre tus artistas favoritos»: fila de artistas con su foto
+ *  - «Tus carpetas» y «Favoritas»
+ *  - «Tu colección»: tabla de canciones, la que suena rellena con el acento
  */
 @Composable
 fun HomeScreen(
     state: PlayerUiState,
     onPlayAll: () -> Unit,
+    onOpenSearch: () -> Unit,
     onOpenLibrary: () -> Unit,
     onOpenFolder: (FolderEntry) -> Unit,
     onPlayFolder: (FolderEntry) -> Unit,
@@ -83,30 +88,93 @@ fun HomeScreen(
     modifier: Modifier = Modifier,
 ) {
     val folders = remember(state.library, state.folders) { folderEntries(state).filter { it.tracks.isNotEmpty() } }
-    val artists = remember(state.library) { artistsOf(state.library).take(4) }
-    val songs = remember(state.library) { state.library.take(6) }
+    val artists = remember(state.library) { artistsOf(state.library).take(10) }
+    val songs = remember(state.library) { state.library.take(8) }
     val favorites = remember(state.library, state.favorites) {
         state.library.filter { it.id in state.favorites }.take(10)
     }
-    val art = state.current?.artUri ?: remember(state.library) { state.library.firstNotNullOfOrNull { it.artUri } }
     val currentId = state.current?.id
 
     LazyColumn(
         modifier.fillMaxSize(),
         // Espacio inferior para el mini reproductor y la barra de pestanas
-        contentPadding = PaddingValues(start = 20.dp, end = 20.dp, top = 0.dp, bottom = 176.dp),
+        contentPadding = PaddingValues(start = 20.dp, end = 20.dp, top = 0.dp, bottom = 196.dp),
     ) {
-        item(key = "hero") {
-            HeroBanner(
-                art = art,
-                count = state.library.size,
-                scanning = state.scanning,
-                onPrimary = if (state.library.isEmpty()) onAddFolder else onPlayAll,
-                onList = onOpenLibrary,
-            )
+        item(key = "headline") {
+            Row(Modifier.fillMaxWidth().padding(top = 4.dp), verticalAlignment = Alignment.CenterVertically) {
+                Text(
+                    "¿Qué vas a\nescuchar hoy?",
+                    color = Frost.Accent,
+                    fontFamily = Script,
+                    fontSize = 52.sp,
+                    lineHeight = 50.sp,
+                    modifier = Modifier.weight(1f),
+                )
+                Icon(
+                    Icons.Rounded.MusicNote, null,
+                    tint = Frost.Accent,
+                    modifier = Modifier.size(64.dp),
+                )
+            }
         }
 
-        item(key = "h-folders") { SectionHeader("Tus", "Carpetas") }
+        item(key = "search") {
+            Row(
+                Modifier.fillMaxWidth().padding(top = 18.dp),
+                horizontalArrangement = Arrangement.spacedBy(10.dp),
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                Row(
+                    Modifier
+                        .weight(1f)
+                        .height(50.dp)
+                        .pressClick(onOpenSearch, pressedScale = 0.98f)
+                        .card(RoundedCornerShape(14.dp), raised = true)
+                        .padding(horizontal = 14.dp),
+                    verticalAlignment = Alignment.CenterVertically,
+                ) {
+                    Icon(Icons.Rounded.Search, null, tint = Frost.TextSecondary, modifier = Modifier.size(22.dp))
+                    Text(
+                        "Canción, álbum, artista…",
+                        color = Frost.TextTertiary,
+                        fontSize = 13.sp,
+                        maxLines = 1,
+                        modifier = Modifier.padding(start = 10.dp),
+                    )
+                }
+                Box(
+                    Modifier
+                        .size(50.dp)
+                        .pressClick(if (state.library.isEmpty()) onAddFolder else onPlayAll, pressedScale = 0.92f)
+                        .clip(RoundedCornerShape(14.dp))
+                        .background(Frost.AccentFill),
+                    contentAlignment = Alignment.Center,
+                ) {
+                    Icon(
+                        if (state.library.isEmpty()) Icons.Rounded.CreateNewFolder else Icons.Rounded.Shuffle,
+                        if (state.library.isEmpty()) "Agregar carpeta" else "Reproducir todo en aleatorio",
+                        tint = Frost.OnAccent,
+                        modifier = Modifier.size(24.dp),
+                    )
+                }
+            }
+        }
+
+        if (artists.isNotEmpty()) {
+            item(key = "h-artists") { SectionHeader("Top", "Descubre tus artistas favoritos", seeAll = onOpenArtists) }
+            item(key = "artists") {
+                LazyRow(
+                    horizontalArrangement = Arrangement.spacedBy(12.dp),
+                    contentPadding = PaddingValues(end = 20.dp),
+                ) {
+                    items(artists, key = { "ar-${it.name}" }) { artist ->
+                        ArtistTile(artist, onClick = { onOpenArtist(artist.name) })
+                    }
+                }
+            }
+        }
+
+        item(key = "h-folders") { SectionHeader("Tus", "Tus carpetas") }
         item(key = "folders") {
             LazyRow(
                 horizontalArrangement = Arrangement.spacedBy(12.dp),
@@ -120,7 +188,7 @@ fun HomeScreen(
         }
 
         if (favorites.isNotEmpty()) {
-            item(key = "h-favs") { SectionHeader("Lo que más te gusta", "Favoritas") }
+            item(key = "h-favs") { SectionHeader("", "Tus favoritas") }
             item(key = "favs") {
                 LazyRow(
                     horizontalArrangement = Arrangement.spacedBy(12.dp),
@@ -134,114 +202,91 @@ fun HomeScreen(
         }
 
         if (songs.isNotEmpty()) {
-            item(key = "h-songs") { SectionHeader("Tu música", "Colección", seeAll = onOpenLibrary) }
+            item(key = "h-songs") {
+                Row(
+                    Modifier.fillMaxWidth().padding(top = 22.dp, bottom = 12.dp),
+                    verticalAlignment = Alignment.CenterVertically,
+                ) {
+                    Text(
+                        "Tu colección",
+                        color = Frost.TextPrimary, fontSize = 16.sp, fontWeight = FontWeight.Medium,
+                        modifier = Modifier.weight(1f),
+                    )
+                    // Acciones: reproducir, aleatorio y ver todo (circulos como en la referencia)
+                    CircleAction(Icons.Rounded.PlayArrow, "Reproducir", filled = true) { onPlay(songs, 0) }
+                    Spacer(Modifier.width(8.dp))
+                    CircleAction(Icons.Rounded.Shuffle, "Aleatorio", filled = false) { onPlay(songs.shuffled(), 0) }
+                    Spacer(Modifier.width(8.dp))
+                    CircleAction(Icons.AutoMirrored.Rounded.ArrowForward, "Ver todo", filled = false, onClick = onOpenLibrary)
+                }
+            }
+            item(key = "table-head") { TableHead() }
             itemsIndexed(songs, key = { _, t -> "s-${t.id}" }) { i, track ->
                 TrackRow(
                     track = track,
                     isCurrent = track.id == currentId,
                     playing = state.isPlaying,
                     onClick = { onPlay(songs, i) },
+                    index = i + 1,
                     favorite = track.id in state.favorites,
                     onFavorite = { onToggleFavorite(track.id) },
                 )
             }
         }
-
-        if (artists.isNotEmpty()) {
-            item(key = "h-artists") { SectionHeader("Top", "Artistas", seeAll = onOpenArtists) }
-            itemsIndexed(artists, key = { _, a -> "a-${a.name}" }) { i, artist ->
-                ArtistRow(i + 1, artist, onClick = { onOpenArtist(artist.name) })
-            }
-        }
     }
 }
 
-/** Funde la imagen con el fondo: se desvanece hacia abajo y hacia la izquierda. */
-private fun Modifier.fadeIntoBackground(): Modifier = this
-    .graphicsLayer { compositingStrategy = CompositingStrategy.Offscreen }
-    .drawWithContent {
-        drawContent()
-        drawRect(
-            Brush.verticalGradient(0f to Color.Black, 0.5f to Color.Black, 1f to Color.Transparent),
-            blendMode = BlendMode.DstIn,
-        )
-        drawRect(
-            Brush.horizontalGradient(0f to Color.Transparent, 0.42f to Color.Black, 1f to Color.Black),
-            blendMode = BlendMode.DstIn,
-        )
-    }
-
-/**
- * Banner de inicio (como la portada de Pulseplay): la portada de la cancion se funde con el
- * degradado de fondo y un titular grande y ligero va encima, con los botones debajo.
- */
+/** Boton circular de la cabecera de la coleccion: relleno con el acento o solo contorno. */
 @Composable
-private fun HeroBanner(
-    art: Any?,
-    count: Int,
-    scanning: Boolean,
-    onPrimary: () -> Unit,
-    onList: () -> Unit,
-) {
-    val empty = count == 0
+private fun CircleAction(icon: ImageVector, description: String, filled: Boolean, onClick: () -> Unit) {
     Box(
         Modifier
-            .fillMaxWidth()
-            .height(340.dp)
+            .size(34.dp)
+            .pressClick(onClick, pressedScale = 0.9f)
+            .clip(CircleShape)
+            .then(if (filled) Modifier.background(Frost.AccentFill) else Modifier.border(1.5.dp, Frost.TextSecondary, CircleShape)),
+        contentAlignment = Alignment.Center,
     ) {
-        if (art != null) {
-            AsyncImage(
-                model = art,
-                contentDescription = null,
-                contentScale = ContentScale.Crop,
-                modifier = Modifier
-                    .align(Alignment.TopEnd)
-                    .fillMaxWidth(0.9f)
-                    .height(280.dp)
-                    .clip(RoundedCornerShape(40.dp))
-                    .fadeIntoBackground(),
-            )
-        } else {
-            // Sin portada: un resplandor suave del color del tema
-            Box(
-                Modifier
-                    .align(Alignment.TopEnd)
-                    .size(260.dp)
-                    .background(Brush.radialGradient(listOf(Frost.content(0.22f), Color.Transparent)))
-            )
-        }
-        Column(Modifier.align(Alignment.BottomStart)) {
-            Text(
-                if (empty) "Empieza aquí" else "Tu biblioteca · ${songsLabel(count)}",
-                color = Frost.TextSecondary,
-                fontSize = 13.sp,
-            )
-            Text(
-                if (empty) (if (scanning) "BUSCANDO\nMÚSICA…" else "AGREGA\nTU MÚSICA") else "TU MÚSICA",
-                color = Frost.TextPrimary,
-                fontSize = 46.sp,
-                lineHeight = 48.sp,
-                fontWeight = FontWeight.Light,
-                letterSpacing = (-1).sp,
-                modifier = Modifier.padding(top = 2.dp, bottom = 14.dp),
-            )
-            Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
-                ActionPill(
-                    if (empty) "Agregar carpeta" else "Reproducir",
-                    onPrimary,
-                    icon = if (empty) Icons.Rounded.CreateNewFolder else Icons.Rounded.PlayArrow,
-                    primary = true,
-                )
-                if (!empty) ActionPill("Ver lista", onList)
-            }
-        }
+        Icon(icon, description, tint = if (filled) Frost.OnAccent else Frost.TextPrimary, modifier = Modifier.size(19.dp))
+    }
+}
+
+/** Cabecera de la tabla: «# Título … Tiempo». */
+@Composable
+private fun TableHead() {
+    Row(Modifier.fillMaxWidth().padding(start = 10.dp, end = 14.dp, bottom = 4.dp, top = 2.dp)) {
+        Text("#", color = Frost.TextTertiary, fontSize = 11.sp, modifier = Modifier.width(24.dp))
+        Text("Título", color = Frost.TextTertiary, fontSize = 11.sp, modifier = Modifier.weight(1f).padding(start = 56.dp))
+        Text("Tiempo", color = Frost.TextTertiary, fontSize = 11.sp)
+    }
+}
+
+/** Foto de artista con su nombre debajo (fila «Descubre tus artistas favoritos»). */
+@Composable
+private fun ArtistTile(artist: ArtistEntry, onClick: () -> Unit) {
+    Column(
+        Modifier
+            .width(112.dp)
+            .pressClick(onClick, pressedScale = 0.96f),
+        horizontalAlignment = Alignment.CenterHorizontally,
+    ) {
+        CoverThumb(artist.cover, 112.dp, corner = 14.dp)
+        Text(
+            artist.name,
+            color = Frost.TextPrimary,
+            fontSize = 12.sp,
+            fontWeight = FontWeight.Medium,
+            maxLines = 1,
+            overflow = TextOverflow.Ellipsis,
+            modifier = Modifier.padding(top = 8.dp),
+        )
     }
 }
 
 /** Tarjeta con la portada a pantalla completa, titulo y artista encima y corazon (como "Top Songs"). */
 @Composable
 private fun CoverCard(track: Track, onClick: () -> Unit, onUnfavorite: () -> Unit) {
-    val shape = RoundedCornerShape(28.dp)
+    val shape = RoundedCornerShape(18.dp)
     Box(
         Modifier
             .width(168.dp)
@@ -284,7 +329,7 @@ private fun CoverCard(track: Track, onClick: () -> Unit, onUnfavorite: () -> Uni
                 .padding(10.dp)
                 .size(36.dp)
                 .pressClick(onUnfavorite, pressedScale = 0.88f)
-                .clip(RoundedCornerShape(12.dp))
+                .clip(RoundedCornerShape(10.dp))
                 .background(Color.White.copy(alpha = 0.24f)),
             contentAlignment = Alignment.Center,
         ) {
@@ -306,7 +351,7 @@ private fun FolderCard(entry: FolderEntry, onOpen: () -> Unit, onPlay: () -> Uni
             .width(158.dp)
             .height(176.dp)
             .pressClick(onOpen, pressedScale = 0.97f)
-            .card(RoundedCornerShape(28.dp))
+            .card(RoundedCornerShape(18.dp))
             .padding(14.dp),
     ) {
         Box(Modifier.fillMaxWidth().height(84.dp)) {
@@ -358,7 +403,7 @@ private fun AddFolderCard(onClick: () -> Unit) {
             .width(158.dp)
             .height(176.dp)
             .pressClick(onClick, pressedScale = 0.97f)
-            .card(RoundedCornerShape(28.dp), raised = true)
+            .card(RoundedCornerShape(18.dp), raised = true)
             .padding(12.dp),
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.Center,
@@ -396,7 +441,7 @@ fun ArtistRow(position: Int, artist: ArtistEntry, onClick: () -> Unit, modifier:
             .padding(vertical = 4.dp)
             .fillMaxWidth()
             .pressClick(onClick, pressedScale = 0.985f)
-            .card(RoundedCornerShape(22.dp))
+            .card(RoundedCornerShape(16.dp))
             .padding(start = 8.dp, end = 8.dp, top = 8.dp, bottom = 8.dp),
         verticalAlignment = Alignment.CenterVertically,
     ) {

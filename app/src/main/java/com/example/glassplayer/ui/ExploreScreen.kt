@@ -136,7 +136,7 @@ fun GridCard(cover: Any?, title: String, subtitle: String, onClick: () -> Unit, 
 /** Selector de dos o mas opciones: la activa se rellena con el color del texto. */
 @Composable
 fun Segmented(options: List<String>, selected: Int, onSelect: (Int) -> Unit, modifier: Modifier = Modifier) {
-    val shape = RoundedCornerShape(50)
+    val shape = RoundedCornerShape(14.dp)
     Row(
         modifier
             .fillMaxWidth()
@@ -150,13 +150,13 @@ fun Segmented(options: List<String>, selected: Int, onSelect: (Int) -> Unit, mod
                     .weight(1f)
                     .pressClick({ onSelect(i) }, pressedScale = 0.96f)
                     .clip(shape)
-                    .background(if (on) Frost.TextPrimary else androidx.compose.ui.graphics.Color.Transparent)
+                    .background(if (on) Frost.AccentFill else androidx.compose.ui.graphics.Color.Transparent)
                     .padding(vertical = 9.dp),
                 contentAlignment = Alignment.Center,
             ) {
                 Text(
                     label,
-                    color = if (on) Frost.Inverse else Frost.TextSecondary,
+                    color = if (on) Frost.OnAccent else Frost.TextSecondary,
                     fontSize = 14.sp,
                     fontWeight = FontWeight.SemiBold,
                 )

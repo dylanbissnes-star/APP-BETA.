@@ -45,7 +45,7 @@ fun BottomTabBar(
     onSelect: (Int) -> Unit,
     modifier: Modifier = Modifier,
 ) {
-    val shape = RoundedCornerShape(34.dp)
+    val shape = RoundedCornerShape(22.dp)
     Row(
         modifier
             .fillMaxWidth()
@@ -83,7 +83,7 @@ private fun TabButton(item: TabItem, selected: Boolean, onClick: () -> Unit, mod
     ) {
         Box(
             Modifier
-                .clip(RoundedCornerShape(50))
+                .clip(RoundedCornerShape(14.dp))
                 .background(chip)
                 .padding(horizontal = 16.dp, vertical = 4.dp),
             contentAlignment = Alignment.Center,

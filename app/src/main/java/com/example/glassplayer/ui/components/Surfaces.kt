@@ -5,6 +5,9 @@ import androidx.compose.foundation.border
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.composed
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.drawWithCache
+import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Shape
@@ -28,4 +31,21 @@ fun Modifier.card(shape: Shape, raised: Boolean = false, outlined: Boolean = tru
         .clip(shape)
         .background(fill)
         .then(if (outlined && !soft) Modifier.border(1.dp, line, shape) else Modifier)
+}
+
+/** Cuadricula muy tenue de fondo (como el fondo de la referencia neon). */
+fun Modifier.gridBackdrop(color: Color, step: Dp = 26.dp): Modifier = drawWithCache {
+    val stepPx = step.toPx()
+    onDrawBehind {
+        var x = 0f
+        while (x < size.width) {
+            drawLine(color, Offset(x, 0f), Offset(x, size.height), 1f)
+            x += stepPx
+        }
+        var y = 0f
+        while (y < size.height) {
+            drawLine(color, Offset(0f, y), Offset(size.width, y), 1f)
+            y += stepPx
+        }
+    }
 }

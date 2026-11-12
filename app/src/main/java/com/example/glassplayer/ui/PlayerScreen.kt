@@ -56,6 +56,7 @@ import androidx.compose.material3.DrawerValue
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.ModalNavigationDrawer
 import androidx.compose.material3.Text
+import androidx.compose.material3.Icon
 import androidx.compose.material3.rememberDrawerState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
@@ -109,6 +110,8 @@ import com.example.glassplayer.ui.components.RoundButton
 import com.example.glassplayer.ui.components.TabBarHeight
 import com.example.glassplayer.ui.components.TabItem
 import com.example.glassplayer.ui.components.card
+import com.example.glassplayer.ui.components.pressClick
+import com.example.glassplayer.ui.components.gridBackdrop
 import com.example.glassplayer.ui.theme.Frost
 import com.example.glassplayer.ui.theme.LocalFrost
 import com.example.glassplayer.ui.theme.frostFor
@@ -229,7 +232,12 @@ fun PlayerScreen(vm: PlayerViewModel) {
                 )
             },
         ) {
-            Box(Modifier.fillMaxSize().background(Frost.BgBrush)) {
+            Box(
+                Modifier
+                    .fillMaxSize()
+                    .background(Frost.BgBrush)
+                    .then(if (frost.onDark) Modifier.gridBackdrop(Color.White.copy(alpha = 0.035f)) else Modifier)
+            ) {
                 // En el reproductor, la portada de la cancion se ve de fondo, muy desenfocada
                 AnimatedVisibility(
                     visible = screen == Screen.Player && detail == null && !playerAccentBg,
@@ -312,6 +320,7 @@ fun PlayerScreen(vm: PlayerViewModel) {
                             Screen.Home -> HomeScreen(
                                 state = state,
                                 onPlayAll = { playAndOpen(state.library.shuffled(), 0) },
+                                onOpenSearch = { go(Screen.Search) },
                                 onOpenLibrary = {
                                     vm.selectSource(SOURCE_ALL)
                                     go(Screen.Library)
@@ -409,9 +418,13 @@ fun PlayerScreen(vm: PlayerViewModel) {
                                 track = track,
                                 playing = state.isPlaying,
                                 progress = state.progress,
-                                favorite = track.id in state.favorites,
+                                shuffle = state.shuffle,
+                                repeatMode = state.repeatMode,
                                 onToggle = vm::togglePlay,
-                                onFavorite = { vm.toggleFavorite(track.id) },
+                                onPrevious = vm::previous,
+                                onNext = vm::next,
+                                onShuffle = vm::toggleShuffle,
+                                onRepeat = vm::cycleRepeat,
                                 onOpen = { go(Screen.Player) },
                                 modifier = Modifier.padding(start = 14.dp, end = 14.dp, bottom = 10.dp),
                             )
@@ -455,39 +468,61 @@ fun PlayerScreen(vm: PlayerViewModel) {
     }
 }
 
-/** Barra superior: una pildora de vidrio con menu lateral, logo y nombre, ajustes e interruptor claro/oscuro. */
+/** Saludo segun la hora del dia. */
+private fun greeting(): String {
+    val hour = java.time.LocalTime.now().hour
+    return when {
+        hour < 12 -> "Buenos días"
+        hour < 19 -> "Buenas tardes"
+        else -> "Buenas noches"
+    }
+}
+
+/**
+ * Barra superior (como la referencia neon): saludo y nombre de la app a la izquierda; a la derecha
+ * ajustes, interruptor claro/oscuro (siempre visible) y el boton de menu relleno con el acento.
+ */
 @Composable
 private fun TopBar(dark: Boolean, onMenu: () -> Unit, onSettings: () -> Unit, onToggleDark: () -> Unit) {
-    val shape = RoundedCornerShape(32.dp)
+    val hello = remember { greeting() }
     Row(
         Modifier
             .statusBarsPadding()
-            .padding(start = 14.dp, end = 14.dp, top = 8.dp, bottom = 6.dp)
             .fillMaxWidth()
-            .card(shape, raised = false)
-            .padding(start = 6.dp, end = 10.dp, top = 6.dp, bottom = 6.dp),
+            .padding(start = 20.dp, end = 20.dp, top = 10.dp, bottom = 6.dp),
         verticalAlignment = Alignment.CenterVertically,
     ) {
-        RoundButton(Icons.Rounded.Menu, "Menú", onMenu, size = 40.dp)
-        Spacer(Modifier.width(10.dp))
         Image(
             painter = painterResource(R.drawable.logo_mark),
             contentDescription = null,
-            modifier = Modifier.size(26.dp),
-            colorFilter = ColorFilter.tint(Frost.TextPrimary),
+            modifier = Modifier.size(30.dp),
+            colorFilter = ColorFilter.tint(Frost.Accent),
         )
-        Spacer(Modifier.width(8.dp))
-        Text(
-            stringResource(R.string.app_name),
-            modifier = Modifier.weight(1f),
-            color = Frost.TextPrimary,
-            fontSize = 17.sp,
-            fontWeight = FontWeight.SemiBold,
-            maxLines = 1,
-        )
+        Spacer(Modifier.width(10.dp))
+        Column(Modifier.weight(1f)) {
+            Text(hello, color = Frost.TextSecondary, fontSize = 12.sp, maxLines = 1)
+            Text(
+                "@" + stringResource(R.string.app_name).uppercase(),
+                color = Frost.TextPrimary,
+                fontSize = 14.sp,
+                fontWeight = FontWeight.Bold,
+                maxLines = 1,
+            )
+        }
         PlainIconButton(Icons.Rounded.Settings, "Ajustes", onSettings, size = 38.dp, iconSize = 22.dp, tint = Frost.TextSecondary)
         Spacer(Modifier.width(2.dp))
         DarkModeToggle(dark = dark, onToggle = onToggleDark)
+        Spacer(Modifier.width(10.dp))
+        Box(
+            Modifier
+                .size(44.dp)
+                .pressClick(onMenu, pressedScale = 0.92f)
+                .clip(RoundedCornerShape(12.dp))
+                .background(Frost.AccentFill),
+            contentAlignment = Alignment.Center,
+        ) {
+            Icon(Icons.Rounded.Menu, "Menú", tint = Frost.OnAccent, modifier = Modifier.size(24.dp))
+        }
     }
 }
 
