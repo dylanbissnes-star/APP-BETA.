@@ -70,6 +70,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.runtime.snapshotFlow
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
@@ -108,10 +109,8 @@ import com.example.glassplayer.ui.components.RoundButton
 import com.example.glassplayer.ui.components.TabBarHeight
 import com.example.glassplayer.ui.components.TabItem
 import com.example.glassplayer.ui.components.card
-import com.example.glassplayer.ui.components.rememberCoverPalette
 import com.example.glassplayer.ui.theme.Frost
 import com.example.glassplayer.ui.theme.LocalFrost
-import com.example.glassplayer.ui.theme.accentPanelFrost
 import com.example.glassplayer.ui.theme.frostFor
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.drop
@@ -141,7 +140,6 @@ fun PlayerScreen(vm: PlayerViewModel) {
     val state by vm.state.collectAsStateWithLifecycle()
     val context = LocalContext.current
     val art = state.current?.artUri
-    val palette = rememberCoverPalette(art)
 
     var screen by rememberSaveable { mutableStateOf(Screen.Home) }
     var detail by remember { mutableStateOf<Detail?>(null) }
@@ -154,7 +152,8 @@ fun PlayerScreen(vm: PlayerViewModel) {
     var playerAccentBg by rememberSaveable { mutableStateOf(SettingsStore.playerAccentBg(context)) }
     val accentColor = Color(accentArgb)
     val frost = frostFor(dark, accentColor)
-    val playerFrost = if (playerAccentBg) accentPanelFrost(accentColor) else frostFor(true, accentColor)
+    // Con «estilo del tema» el reproductor usa el mismo fondo que la app; si no, queda oscuro sobre la portada desenfocada
+    val playerFrost = if (playerAccentBg) frost else frostFor(true, accentColor)
 
     val drawerState = rememberDrawerState(DrawerValue.Closed)
     val scope = rememberCoroutineScope()
@@ -230,15 +229,14 @@ fun PlayerScreen(vm: PlayerViewModel) {
                 )
             },
         ) {
-            Box(Modifier.fillMaxSize().background(Frost.Bg)) {
+            Box(Modifier.fillMaxSize().background(Frost.BgBrush)) {
                 // En el reproductor, la portada de la cancion se ve de fondo, muy desenfocada
                 AnimatedVisibility(
-                    visible = screen == Screen.Player && detail == null,
+                    visible = screen == Screen.Player && detail == null && !playerAccentBg,
                     enter = fadeIn(tween(500)),
                     exit = fadeOut(tween(300)),
                 ) {
-                    if (playerAccentBg) AccentBackdrop(accentColor)
-                    else PageBackground(dark = true, art = art, showArt = art != null)
+                    PageBackground(dark = true, art = art, showArt = art != null)
                 }
 
                 val showTopBar = screen != Screen.Player && detail == null
@@ -313,7 +311,6 @@ fun PlayerScreen(vm: PlayerViewModel) {
                         } else when (v.screen) {
                             Screen.Home -> HomeScreen(
                                 state = state,
-                                palette = palette,
                                 onPlayAll = { playAndOpen(state.library.shuffled(), 0) },
                                 onOpenLibrary = {
                                     vm.selectSource(SOURCE_ALL)
@@ -416,7 +413,7 @@ fun PlayerScreen(vm: PlayerViewModel) {
                                 onToggle = vm::togglePlay,
                                 onFavorite = { vm.toggleFavorite(track.id) },
                                 onOpen = { go(Screen.Player) },
-                                modifier = Modifier.padding(start = 12.dp, end = 12.dp, bottom = 8.dp),
+                                modifier = Modifier.padding(start = 14.dp, end = 14.dp, bottom = 10.dp),
                             )
                         }
                     }
@@ -438,9 +435,10 @@ fun PlayerScreen(vm: PlayerViewModel) {
                         Modifier
                             .align(Alignment.BottomCenter)
                             .navigationBarsPadding()
-                            .padding(start = 24.dp, end = 24.dp, bottom = TabBarHeight + 86.dp)
+                            .padding(start = 24.dp, end = 24.dp, bottom = TabBarHeight + 80.dp)
                             .shadow(12.dp, pill, ambientColor = Frost.Tint, spotColor = Frost.Tint)
-                            .card(pill, raised = true)
+                            .clip(pill)
+                            .background(Frost.Floating)
                             .padding(horizontal = 20.dp, vertical = 12.dp)
                     ) {
                         Text(
@@ -457,22 +455,25 @@ fun PlayerScreen(vm: PlayerViewModel) {
     }
 }
 
-/** Barra superior: menu lateral, logo y nombre, e interruptor claro/oscuro siempre visible. */
+/** Barra superior: una pildora de vidrio con menu lateral, logo y nombre, ajustes e interruptor claro/oscuro. */
 @Composable
 private fun TopBar(dark: Boolean, onMenu: () -> Unit, onSettings: () -> Unit, onToggleDark: () -> Unit) {
+    val shape = RoundedCornerShape(32.dp)
     Row(
         Modifier
-            .fillMaxWidth()
             .statusBarsPadding()
-            .padding(start = 16.dp, end = 20.dp, top = 8.dp, bottom = 4.dp),
+            .padding(start = 14.dp, end = 14.dp, top = 8.dp, bottom = 6.dp)
+            .fillMaxWidth()
+            .card(shape, raised = false)
+            .padding(start = 6.dp, end = 10.dp, top = 6.dp, bottom = 6.dp),
         verticalAlignment = Alignment.CenterVertically,
     ) {
-        RoundButton(Icons.Rounded.Menu, "Menú", onMenu, size = 42.dp)
-        Spacer(Modifier.width(12.dp))
+        RoundButton(Icons.Rounded.Menu, "Menú", onMenu, size = 40.dp)
+        Spacer(Modifier.width(10.dp))
         Image(
             painter = painterResource(R.drawable.logo_mark),
             contentDescription = null,
-            modifier = Modifier.size(28.dp),
+            modifier = Modifier.size(26.dp),
             colorFilter = ColorFilter.tint(Frost.TextPrimary),
         )
         Spacer(Modifier.width(8.dp))
@@ -482,21 +483,12 @@ private fun TopBar(dark: Boolean, onMenu: () -> Unit, onSettings: () -> Unit, on
             color = Frost.TextPrimary,
             fontSize = 17.sp,
             fontWeight = FontWeight.SemiBold,
+            maxLines = 1,
         )
-        PlainIconButton(Icons.Rounded.Settings, "Ajustes", onSettings, size = 40.dp, iconSize = 22.dp, tint = Frost.TextSecondary)
-        Spacer(Modifier.width(4.dp))
+        PlainIconButton(Icons.Rounded.Settings, "Ajustes", onSettings, size = 38.dp, iconSize = 22.dp, tint = Frost.TextSecondary)
+        Spacer(Modifier.width(2.dp))
         DarkModeToggle(dark = dark, onToggle = onToggleDark)
     }
-}
-
-/** Fondo del reproductor cuando se pinta con el color de acento (degradado suave hacia un tono mas profundo). */
-@Composable
-private fun AccentBackdrop(accent: Color) {
-    Box(
-        Modifier
-            .fillMaxSize()
-            .background(Brush.verticalGradient(listOf(accent, lerp(accent, Color.Black, 0.22f))))
-    )
 }
 
 /** Nombre de la lista que suena: el album o artista si todas son del mismo, o «Mi música». */

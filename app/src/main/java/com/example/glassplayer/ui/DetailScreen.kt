@@ -60,13 +60,10 @@ fun DetailScreen(
 ) {
     val currentId = state.current?.id
     val allLiked = tracks.isNotEmpty() && tracks.all { it.id in state.favorites }
-    val accent = Frost.AccentFill
 
     Box(
         modifier
             .fillMaxSize()
-            // Un resplandor suave del acento detras de la portada
-            .background(Brush.verticalGradient(listOf(accent.copy(alpha = 0.22f), Color.Transparent), endY = 900f))
     ) {
     Column(Modifier.fillMaxSize().statusBarsPadding()) {
         Row(

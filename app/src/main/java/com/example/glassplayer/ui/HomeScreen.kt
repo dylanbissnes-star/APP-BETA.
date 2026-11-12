@@ -24,6 +24,8 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.Add
 import androidx.compose.material.icons.rounded.CreateNewFolder
+import androidx.compose.material.icons.rounded.Favorite
+import androidx.compose.material.icons.rounded.MusicNote
 import androidx.compose.material.icons.rounded.PlayArrow
 import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
@@ -32,15 +34,22 @@ import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.draw.drawBehind
+import androidx.compose.ui.draw.drawWithContent
 import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.graphics.BlendMode
 import androidx.compose.ui.graphics.Brush
+import androidx.compose.ui.graphics.CompositingStrategy
+import androidx.compose.ui.graphics.graphicsLayer
+import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.draw.drawBehind
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import coil.compose.AsyncImage
+import com.example.glassplayer.ui.components.ActionPill
 import com.example.glassplayer.PlayerUiState
 import com.example.glassplayer.data.Track
 import com.example.glassplayer.ui.components.CoverThumb
@@ -52,16 +61,16 @@ import com.example.glassplayer.ui.theme.Frost
 import java.util.Locale
 
 /**
- * Inicio (estilo del panel de la referencia):
- *  - "Top / Tendencias": banner con degradado y botones Reproducir / Ver lista
- *  - "Tus / Carpetas": tarjetas con 3 portadas por carpeta + «Agregar carpeta»
- *  - "Tu musica / Canciones": tabla con numero, portada, tiempo y corazon
- *  - "Top / Artistas": lista numerada
+ * Inicio (estilo Pulseplay):
+ *  - Banner con la portada que se funde en el fondo, titular grande y botones
+ *  - «Carpetas»: tarjetas con 3 portadas por carpeta + «Agregar carpeta»
+ *  - «Favoritas»: tarjetas con portada completa y corazon
+ *  - «Colección»: pildoras de cancion con tiempo y corazon
+ *  - «Artistas»: lista numerada
  */
 @Composable
 fun HomeScreen(
     state: PlayerUiState,
-    palette: List<Color>,
     onPlayAll: () -> Unit,
     onOpenLibrary: () -> Unit,
     onOpenFolder: (FolderEntry) -> Unit,
@@ -75,18 +84,21 @@ fun HomeScreen(
 ) {
     val folders = remember(state.library, state.folders) { folderEntries(state).filter { it.tracks.isNotEmpty() } }
     val artists = remember(state.library) { artistsOf(state.library).take(4) }
-    val songs = remember(state.library) { state.library.take(8) }
+    val songs = remember(state.library) { state.library.take(6) }
+    val favorites = remember(state.library, state.favorites) {
+        state.library.filter { it.id in state.favorites }.take(10)
+    }
+    val art = state.current?.artUri ?: remember(state.library) { state.library.firstNotNullOfOrNull { it.artUri } }
     val currentId = state.current?.id
 
     LazyColumn(
         modifier.fillMaxSize(),
         // Espacio inferior para el mini reproductor y la barra de pestanas
-        contentPadding = PaddingValues(start = 20.dp, end = 20.dp, top = 0.dp, bottom = 168.dp),
+        contentPadding = PaddingValues(start = 20.dp, end = 20.dp, top = 0.dp, bottom = 176.dp),
     ) {
-        item(key = "h-hero") { SectionHeader("Top", "Tendencias", seeAll = onOpenLibrary) }
         item(key = "hero") {
             HeroBanner(
-                palette = palette,
+                art = art,
                 count = state.library.size,
                 scanning = state.scanning,
                 onPrimary = if (state.library.isEmpty()) onAddFolder else onPlayAll,
@@ -107,16 +119,28 @@ fun HomeScreen(
             }
         }
 
+        if (favorites.isNotEmpty()) {
+            item(key = "h-favs") { SectionHeader("Lo que más te gusta", "Favoritas") }
+            item(key = "favs") {
+                LazyRow(
+                    horizontalArrangement = Arrangement.spacedBy(12.dp),
+                    contentPadding = PaddingValues(end = 20.dp),
+                ) {
+                    itemsIndexed(favorites, key = { _, t -> "f-${t.id}" }) { i, track ->
+                        CoverCard(track, onClick = { onPlay(favorites, i) }, onUnfavorite = { onToggleFavorite(track.id) })
+                    }
+                }
+            }
+        }
+
         if (songs.isNotEmpty()) {
-            item(key = "h-songs") { SectionHeader("Tu música", "Canciones", seeAll = onOpenLibrary) }
-            item(key = "table-head") { TableHead() }
+            item(key = "h-songs") { SectionHeader("Tu música", "Colección", seeAll = onOpenLibrary) }
             itemsIndexed(songs, key = { _, t -> "s-${t.id}" }) { i, track ->
                 TrackRow(
                     track = track,
                     isCurrent = track.id == currentId,
                     playing = state.isPlaying,
                     onClick = { onPlay(songs, i) },
-                    index = i + 1,
                     favorite = track.id in state.favorites,
                     onFavorite = { onToggleFavorite(track.id) },
                 )
@@ -132,116 +156,140 @@ fun HomeScreen(
     }
 }
 
-/** Cabecera de la tabla de canciones (#, nombre, tiempo, like) como en la referencia. */
-@Composable
-private fun TableHead() {
-    val line = Frost.Outline
-    Row(
-        Modifier
-            .fillMaxWidth()
-            .drawBehind { drawLine(line, Offset(0f, size.height), Offset(size.width, size.height), 1f) }
-            .padding(bottom = 8.dp),
-        verticalAlignment = Alignment.CenterVertically,
-    ) {
-        Text("#", color = Frost.TextTertiary, fontSize = 12.sp, modifier = Modifier.width(30.dp))
-        Text("Canción", color = Frost.TextTertiary, fontSize = 12.sp, modifier = Modifier.weight(1f))
-        Text("Tiempo   Like", color = Frost.TextTertiary, fontSize = 12.sp, modifier = Modifier.padding(end = 10.dp))
+/** Funde la imagen con el fondo: se desvanece hacia abajo y hacia la izquierda. */
+private fun Modifier.fadeIntoBackground(): Modifier = this
+    .graphicsLayer { compositingStrategy = CompositingStrategy.Offscreen }
+    .drawWithContent {
+        drawContent()
+        drawRect(
+            Brush.verticalGradient(0f to Color.Black, 0.5f to Color.Black, 1f to Color.Transparent),
+            blendMode = BlendMode.DstIn,
+        )
+        drawRect(
+            Brush.horizontalGradient(0f to Color.Transparent, 0.42f to Color.Black, 1f to Color.Black),
+            blendMode = BlendMode.DstIn,
+        )
     }
-}
 
-/** Banner con degradado: tres focos de color (rosa arriba a la derecha, azul y violeta) sobre fondo oscuro. */
+/**
+ * Banner de inicio (como la portada de Pulseplay): la portada de la cancion se funde con el
+ * degradado de fondo y un titular grande y ligero va encima, con los botones debajo.
+ */
 @Composable
 private fun HeroBanner(
-    palette: List<Color>,
+    art: Any?,
     count: Int,
     scanning: Boolean,
     onPrimary: () -> Unit,
     onList: () -> Unit,
 ) {
-    val blue = palette[3]
-    val violet = palette[1]
-    val pink = palette[2]
     val empty = count == 0
     Box(
         Modifier
             .fillMaxWidth()
-            .height(210.dp)
-            .clip(RoundedCornerShape(26.dp))
-            .background(Color(0xFF0B0B14))
-            .drawBehind {
-                drawRect(
-                    Brush.radialGradient(
-                        listOf(pink.copy(alpha = 0.95f), Color.Transparent),
-                        center = Offset(size.width * 0.88f, size.height * 0.10f),
-                        radius = size.width * 0.75f,
-                    )
-                )
-                drawRect(
-                    Brush.radialGradient(
-                        listOf(blue.copy(alpha = 0.90f), Color.Transparent),
-                        center = Offset(size.width * 0.70f, size.height * 1.0f),
-                        radius = size.width * 0.70f,
-                    )
-                )
-                drawRect(
-                    Brush.radialGradient(
-                        listOf(violet.copy(alpha = 0.80f), Color.Transparent),
-                        center = Offset(size.width * 0.55f, size.height * 0.50f),
-                        radius = size.width * 0.55f,
-                    )
-                )
-            }
+            .height(340.dp)
     ) {
-        Column(
-            Modifier
-                .fillMaxSize()
-                .padding(22.dp),
-            verticalArrangement = Arrangement.SpaceBetween,
-        ) {
-            Column {
-                Text(
-                    if (empty) "Empieza aquí" else "Tu biblioteca · ${songsLabel(count)}",
-                    color = Color.White.copy(alpha = 0.72f),
-                    fontSize = 13.sp,
-                )
-                Text(
-                    if (empty) (if (scanning) "Buscando\nmúsica…" else "Agrega tu\nmúsica") else "Tu música\nde hoy",
-                    color = Color.White,
-                    fontSize = 30.sp,
-                    lineHeight = 34.sp,
-                    fontWeight = FontWeight.Bold,
-                    modifier = Modifier.padding(top = 4.dp),
-                )
-            }
+        if (art != null) {
+            AsyncImage(
+                model = art,
+                contentDescription = null,
+                contentScale = ContentScale.Crop,
+                modifier = Modifier
+                    .align(Alignment.TopEnd)
+                    .fillMaxWidth(0.9f)
+                    .height(280.dp)
+                    .clip(RoundedCornerShape(40.dp))
+                    .fadeIntoBackground(),
+            )
+        } else {
+            // Sin portada: un resplandor suave del color del tema
+            Box(
+                Modifier
+                    .align(Alignment.TopEnd)
+                    .size(260.dp)
+                    .background(Brush.radialGradient(listOf(Frost.content(0.22f), Color.Transparent)))
+            )
+        }
+        Column(Modifier.align(Alignment.BottomStart)) {
+            Text(
+                if (empty) "Empieza aquí" else "Tu biblioteca · ${songsLabel(count)}",
+                color = Frost.TextSecondary,
+                fontSize = 13.sp,
+            )
+            Text(
+                if (empty) (if (scanning) "BUSCANDO\nMÚSICA…" else "AGREGA\nTU MÚSICA") else "TU MÚSICA",
+                color = Frost.TextPrimary,
+                fontSize = 46.sp,
+                lineHeight = 48.sp,
+                fontWeight = FontWeight.Light,
+                letterSpacing = (-1).sp,
+                modifier = Modifier.padding(top = 2.dp, bottom = 14.dp),
+            )
             Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
-                HeroButton(
+                ActionPill(
                     if (empty) "Agregar carpeta" else "Reproducir",
-                    if (empty) Icons.Rounded.CreateNewFolder else Icons.Rounded.PlayArrow,
-                    filled = true, onClick = onPrimary,
+                    onPrimary,
+                    icon = if (empty) Icons.Rounded.CreateNewFolder else Icons.Rounded.PlayArrow,
+                    primary = true,
                 )
-                if (!empty) HeroButton("Ver lista", null, filled = false, onClick = onList)
+                if (!empty) ActionPill("Ver lista", onList)
             }
         }
     }
 }
 
+/** Tarjeta con la portada a pantalla completa, titulo y artista encima y corazon (como "Top Songs"). */
 @Composable
-private fun HeroButton(label: String, icon: ImageVector?, filled: Boolean, onClick: () -> Unit) {
-    val shape = RoundedCornerShape(50)
-    val fg = if (filled) Color(0xFF111113) else Color.White
-    Row(
+private fun CoverCard(track: Track, onClick: () -> Unit, onUnfavorite: () -> Unit) {
+    val shape = RoundedCornerShape(28.dp)
+    Box(
         Modifier
-            .pressClick(onClick, pressedScale = 0.95f)
+            .width(168.dp)
+            .height(212.dp)
+            .pressClick(onClick, pressedScale = 0.97f)
             .clip(shape)
-            .background(if (filled) Color.White else Color(0x59000000))
-            .padding(horizontal = 18.dp, vertical = 10.dp),
-        verticalAlignment = Alignment.CenterVertically,
+            .background(Brush.linearGradient(listOf(Frost.SurfaceHigh, Frost.Surface))),
     ) {
-        if (icon != null) {
-            Icon(icon, null, tint = fg, modifier = Modifier.size(18.dp))
-            Spacer(Modifier.width(6.dp))
+        if (track.artUri != null) {
+            AsyncImage(
+                model = track.artUri,
+                contentDescription = null,
+                contentScale = ContentScale.Crop,
+                modifier = Modifier.fillMaxSize(),
+            )
+        } else {
+            Icon(
+                Icons.Rounded.MusicNote, null, tint = Frost.TextTertiary,
+                modifier = Modifier.align(Alignment.Center).size(48.dp),
+            )
         }
-        Text(label, color = fg, fontSize = 14.sp, fontWeight = FontWeight.SemiBold)
+        Box(
+            Modifier
+                .fillMaxSize()
+                .background(Brush.verticalGradient(0.45f to Color.Transparent, 1f to Color.Black.copy(alpha = 0.72f)))
+        )
+        Column(Modifier.align(Alignment.BottomStart).padding(start = 14.dp, end = 54.dp, bottom = 14.dp)) {
+            Text(
+                track.title, color = Color.White, fontSize = 14.sp, fontWeight = FontWeight.SemiBold,
+                maxLines = 1, overflow = TextOverflow.Ellipsis,
+            )
+            Text(
+                track.artist, color = Color.White.copy(alpha = 0.75f), fontSize = 12.sp,
+                maxLines = 1, overflow = TextOverflow.Ellipsis,
+            )
+        }
+        Box(
+            Modifier
+                .align(Alignment.BottomEnd)
+                .padding(10.dp)
+                .size(36.dp)
+                .pressClick(onUnfavorite, pressedScale = 0.88f)
+                .clip(RoundedCornerShape(12.dp))
+                .background(Color.White.copy(alpha = 0.24f)),
+            contentAlignment = Alignment.Center,
+        ) {
+            Icon(Icons.Rounded.Favorite, "Quitar de favoritos", tint = Color.White, modifier = Modifier.size(20.dp))
+        }
     }
 }
 
@@ -252,14 +300,14 @@ private fun FolderCard(entry: FolderEntry, onOpen: () -> Unit, onPlay: () -> Uni
         val uris = entry.tracks.mapNotNull { it.artUri }.distinct().take(3)
         if (uris.isEmpty()) listOf(null, null, null) else uris
     }
-    val ring = Frost.Surface
+    val ring = Frost.Floating
     Column(
         Modifier
             .width(158.dp)
             .height(176.dp)
             .pressClick(onOpen, pressedScale = 0.97f)
-            .card(RoundedCornerShape(22.dp))
-            .padding(12.dp),
+            .card(RoundedCornerShape(28.dp))
+            .padding(14.dp),
     ) {
         Box(Modifier.fillMaxWidth().height(84.dp)) {
             covers.forEachIndexed { i, art ->
@@ -310,7 +358,7 @@ private fun AddFolderCard(onClick: () -> Unit) {
             .width(158.dp)
             .height(176.dp)
             .pressClick(onClick, pressedScale = 0.97f)
-            .card(RoundedCornerShape(22.dp), raised = true)
+            .card(RoundedCornerShape(28.dp), raised = true)
             .padding(12.dp),
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.Center,
@@ -343,16 +391,16 @@ private fun AddFolderCard(onClick: () -> Unit) {
 /** Fila numerada de artista (portada, nombre, conteo y posicion), como "Top Artist" de la referencia. */
 @Composable
 fun ArtistRow(position: Int, artist: ArtistEntry, onClick: () -> Unit, modifier: Modifier = Modifier) {
-    val line = Frost.Outline
     Row(
         modifier
+            .padding(vertical = 4.dp)
             .fillMaxWidth()
             .pressClick(onClick, pressedScale = 0.985f)
-            .drawBehind { drawLine(line, Offset(0f, size.height), Offset(size.width, size.height), 1f) }
-            .padding(vertical = 8.dp),
+            .card(RoundedCornerShape(22.dp))
+            .padding(start = 8.dp, end = 8.dp, top = 8.dp, bottom = 8.dp),
         verticalAlignment = Alignment.CenterVertically,
     ) {
-        CoverThumb(artist.cover, 50.dp, corner = 14.dp)
+        CoverThumb(artist.cover, 50.dp, corner = 25.dp)
         Column(
             Modifier
                 .weight(1f)

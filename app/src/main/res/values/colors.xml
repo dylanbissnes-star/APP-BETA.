@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <color name="glass_bg">#F7F7F8</color>
+    <color name="glass_bg">#4A0F31</color>
     <!-- Blanco: fondo del icono (glifo negro) -->
     <color name="ic_launcher_background">#FFFFFF</color>
 </resources>

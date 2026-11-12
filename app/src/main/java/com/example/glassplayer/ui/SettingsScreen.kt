@@ -54,15 +54,16 @@ import com.example.glassplayer.ui.components.ScreenHeader
 import com.example.glassplayer.ui.components.card
 import com.example.glassplayer.ui.components.pressClick
 import com.example.glassplayer.ui.theme.Frost
+import com.example.glassplayer.ui.theme.frostFor
 import com.example.glassplayer.ui.theme.onAccentFor
 import kotlin.math.roundToInt
 
 /** Colores sugeridos; ademas se puede mezclar cualquiera con los deslizadores. */
 private val Presets = listOf(
-    Color(0xFFFFC21A), // ambar (por defecto)
-    Color(0xFFFF8A3D), // naranja
+    Color(0xFFF0189E), // rosa intenso (por defecto)
     Color(0xFFFF5A5F), // coral
-    Color(0xFFFF4D8D), // rosa
+    Color(0xFFFF8A3D), // naranja
+    Color(0xFFFFC21A), // ambar
     Color(0xFFB66DFF), // violeta
     Color(0xFF6C7BFF), // azul violeta
     Color(0xFF3DA5FF), // azul
@@ -113,7 +114,7 @@ fun SettingsScreen(
         ) {
             // --- Color de acento ---
             Section("Color de acento") {
-                AccentPreview(accent)
+                AccentPreview(accent, dark)
                 Spacer(Modifier.height(16.dp))
                 FlowRow(
                     horizontalArrangement = Arrangement.spacedBy(12.dp),
@@ -166,8 +167,8 @@ fun SettingsScreen(
                 SwitchRow("Modo oscuro", "Fondo oscuro o claro en toda la app", dark, onDark)
                 Spacer(Modifier.height(6.dp))
                 SwitchRow(
-                    "Reproductor con tu color",
-                    "Pinta el reproductor con el acento. Si lo apagas, se ve la portada desenfocada.",
+                    "Reproductor con el fondo del tema",
+                    "Si lo apagas, el reproductor muestra la portada desenfocada.",
                     playerAccentBg, onPlayerAccentBg,
                 )
             }
@@ -196,28 +197,28 @@ private fun Section(title: String, content: @Composable () -> Unit) {
     }
 }
 
-/** Vista previa con los elementos que usan el acento (boton, play, corazon). */
+/** Vista previa del tema con el acento elegido: degradado de fondo, boton, play, corazon y progreso. */
 @Composable
-private fun AccentPreview(accent: Color) {
-    val on = onAccentFor(accent)
+private fun AccentPreview(accent: Color, dark: Boolean) {
+    val f = frostFor(dark, accent)
     Row(
         Modifier
             .fillMaxWidth()
-            .clip(RoundedCornerShape(18.dp))
-            .background(Frost.SurfaceHigh)
-            .padding(14.dp),
+            .clip(RoundedCornerShape(20.dp))
+            .background(Brush.verticalGradient(f.bgColors))
+            .padding(16.dp),
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.spacedBy(14.dp),
     ) {
         Box(
-            Modifier.clip(RoundedCornerShape(50)).background(accent).padding(horizontal = 16.dp, vertical = 9.dp),
-        ) { Text("Aleatorio", color = on, fontSize = 13.sp, fontWeight = FontWeight.SemiBold) }
-        Box(Modifier.size(40.dp).clip(CircleShape).background(accent), contentAlignment = Alignment.Center) {
-            Icon(Icons.Rounded.PlayArrow, null, tint = on, modifier = Modifier.size(24.dp))
+            Modifier.clip(RoundedCornerShape(50)).background(f.content).padding(horizontal = 16.dp, vertical = 9.dp),
+        ) { Text("Aleatorio", color = f.inverse, fontSize = 13.sp, fontWeight = FontWeight.SemiBold) }
+        Box(Modifier.size(40.dp).clip(CircleShape).background(f.accentFill), contentAlignment = Alignment.Center) {
+            Icon(Icons.Rounded.PlayArrow, null, tint = f.onAccent, modifier = Modifier.size(24.dp))
         }
-        Icon(Icons.Rounded.Favorite, null, tint = accent, modifier = Modifier.size(26.dp))
-        Box(Modifier.weight(1f).height(4.dp).clip(CircleShape).background(Frost.Outline)) {
-            Box(Modifier.fillMaxWidth(0.6f).height(4.dp).background(accent))
+        Icon(Icons.Rounded.Favorite, null, tint = f.accentFill, modifier = Modifier.size(26.dp))
+        Box(Modifier.weight(1f).height(4.dp).clip(CircleShape).background(f.outline)) {
+            Box(Modifier.fillMaxWidth(0.6f).height(4.dp).background(f.accentFill))
         }
     }
 }

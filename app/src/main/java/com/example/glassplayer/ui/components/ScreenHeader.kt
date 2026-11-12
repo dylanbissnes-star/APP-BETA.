@@ -36,7 +36,7 @@ fun ScreenHeader(
         verticalAlignment = Alignment.CenterVertically,
     ) {
         Column(Modifier.weight(1f)) {
-            Text(title, color = Frost.TextPrimary, fontSize = 24.sp, fontWeight = FontWeight.SemiBold)
+            Text(title, color = Frost.TextPrimary, fontSize = 34.sp, fontWeight = FontWeight.Bold, letterSpacing = (-0.8).sp)
             Text(subtitle, style = MaterialTheme.typography.bodyMedium, color = Frost.TextSecondary)
         }
         if (trailing != null) trailing()

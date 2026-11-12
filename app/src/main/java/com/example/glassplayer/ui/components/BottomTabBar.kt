@@ -21,6 +21,8 @@ import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.shadow
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -30,7 +32,7 @@ import com.example.glassplayer.ui.theme.Frost
 data class TabItem(val icon: ImageVector, val label: String)
 
 /** Alto de la barra sin contar la zona de gestos del sistema. */
-val TabBarHeight = 64.dp
+val TabBarHeight = 76.dp
 
 /**
  * Barra de pestanas inferior (como la de la referencia): superficie oscura con esquinas superiores
@@ -43,15 +45,17 @@ fun BottomTabBar(
     onSelect: (Int) -> Unit,
     modifier: Modifier = Modifier,
 ) {
-    val shape = RoundedCornerShape(topStart = 26.dp, topEnd = 26.dp)
+    val shape = RoundedCornerShape(34.dp)
     Row(
         modifier
             .fillMaxWidth()
-            .clip(shape)
-            .background(Frost.Surface)
-            .border(1.dp, Frost.Outline, shape)
             .navigationBarsPadding()
-            .height(TabBarHeight)
+            .padding(start = 14.dp, end = 14.dp, bottom = 10.dp)
+            .shadow(16.dp, shape, ambientColor = Frost.Tint.copy(alpha = 0.25f), spotColor = Frost.Tint.copy(alpha = 0.25f))
+            .clip(shape)
+            .background(Frost.Floating)
+            .border(1.dp, Frost.Outline, shape)
+            .height(TabBarHeight - 10.dp)
             .padding(horizontal = 8.dp),
         horizontalArrangement = Arrangement.SpaceEvenly,
         verticalAlignment = Alignment.CenterVertically,
@@ -64,11 +68,12 @@ fun BottomTabBar(
 
 @Composable
 private fun TabButton(item: TabItem, selected: Boolean, onClick: () -> Unit, modifier: Modifier) {
+    // La pestana activa va en una pildora rellena (blanca en oscuro, con el acento en claro)
     val tint by animateColorAsState(
-        if (selected) Frost.Accent else Frost.TextTertiary, tween(220), label = "tabTint",
+        if (selected) Frost.OnAccent else Frost.TextSecondary, tween(220), label = "tabTint",
     )
     val chip by animateColorAsState(
-        if (selected) Frost.SurfaceHigh else Frost.Surface, tween(220), label = "tabChip",
+        if (selected) Frost.AccentFill else Color.Transparent, tween(220), label = "tabChip",
     )
     Column(
         modifier
@@ -87,7 +92,7 @@ private fun TabButton(item: TabItem, selected: Boolean, onClick: () -> Unit, mod
         }
         Text(
             item.label,
-            color = tint,
+            color = if (selected) Frost.TextPrimary else Frost.TextSecondary,
             fontSize = 10.sp,
             fontWeight = if (selected) FontWeight.SemiBold else FontWeight.Normal,
             maxLines = 1,
