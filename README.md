@@ -1,14 +1,14 @@
 # ProjectPolaris
 
-Reproductor de música para Android. Diseño «Polaris»: en modo oscuro, un degradado profundo del color
-de acento con tarjetas de vidrio y botones blancos; en modo claro, fondo gris suave, tarjetas blancas y
-tinta oscura. Todo se deriva del acento que elijas en Ajustes. Kotlin + Jetpack Compose + Media3 (ExoPlayer).
+Reproductor de música para Android. Diseño «Polaris Neon»: negro con cuadrícula tenue, tarjetas gris oscuro
+con contorno fino y un color de acento neón que eliges en Ajustes (verde por defecto), con titulares en
+letra cursiva. También hay un modo claro suave. Kotlin + Jetpack Compose + Media3 (ExoPlayer).
 
 ## Qué incluye
 
-- **Inicio**: banner con la portada fundida en el fondo y titular grande (Reproducir / Ver lista), tus
-  carpetas como tarjetas con 3 portadas, «Favoritas» con portada completa, «Colección» de canciones
-  en pastillas (tiempo y corazón) y lista de artistas.
+- **Inicio**: titular cursivo «¿Qué vas a escuchar hoy?», buscador y botón de aleatorio, fila de artistas,
+  tus carpetas (tarjetas con 3 portadas), favoritas y tu colección en tabla (la que suena va rellena con el acento).
+- **Mini reproductor**: repetir, anterior, play, siguiente y aleatorio; la flecha abre el reproductor.
 - **Barra inferior** con 5 pestañas: Inicio, Explorar, Favoritos, Biblioteca y Buscar.
 - **Menú lateral** (botón ☰): MENÚ, BIBLIOTECA (Álbumes, Canciones, Artistas), CARPETAS (con papelera
   y «Agregar carpeta») y Cola.
@@ -22,7 +22,6 @@ tinta oscura. Todo se deriva del acento que elijas en Ajustes. Kotlin + Jetpack 
 - **Favoritos**: corazón en cualquier canción; se guardan entre sesiones.
 - **Reproductor** (inspirado en la referencia amarilla): fondo del color de acento, portada grande,
   título centrado, progreso, transporte, volumen y acciones (aleatorio, repetir, favorito, letra, salida de audio); la cola está arriba a la derecha.
-- **Mini reproductor** sobre la barra inferior, con progreso.
 - **Biblioteca**: filtro por carpeta; **desliza a la izquierda** para añadir a la cola.
 - **Cola «Siguiente»**: «Reproduciendo ahora», «En cola» y «A continuación».
 - **Carpetas**: selector del sistema; se recorren subcarpetas, se leen título/artista/portada y se
@@ -65,3 +64,7 @@ app/src/main/java/com/example/glassplayer/
 - Ecualizador (`android.media.audiofx.Equalizer`) y control de volumen.
 - Cola persistente al cerrar la app.
 - Tema claro tipo "Story Music" (segunda referencia) como alternativa.
+
+## Tipografías
+
+Poppins (texto) y Mr De Haviland (titulares cursivos), ambas con licencia SIL OFL (Google Fonts), en `app/src/main/res/font`.
