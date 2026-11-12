@@ -1,13 +1,14 @@
 # ProjectPolaris
 
-Reproductor de música para Android con una UI oscura y sólida (tarjetas con borde fino, sin cristal),
-inspirada en apps de música modernas. Kotlin + Jetpack Compose + Media3 (ExoPlayer).
+Reproductor de música para Android. Diseño «Polaris»: en modo oscuro, un degradado profundo del color
+de acento con tarjetas de vidrio y botones blancos; en modo claro, fondo gris suave, tarjetas blancas y
+tinta oscura. Todo se deriva del acento que elijas en Ajustes. Kotlin + Jetpack Compose + Media3 (ExoPlayer).
 
 ## Qué incluye
 
-- **Inicio**: banner «Tendencias» con degradado de la portada (Reproducir / Ver lista), tus carpetas
-  como tarjetas con 3 portadas, tabla «Top» de canciones (#, título, artista, tiempo, corazón) y
-  lista numerada de artistas.
+- **Inicio**: banner con la portada fundida en el fondo y titular grande (Reproducir / Ver lista), tus
+  carpetas como tarjetas con 3 portadas, «Favoritas» con portada completa, «Colección» de canciones
+  en pastillas (tiempo y corazón) y lista de artistas.
 - **Barra inferior** con 5 pestañas: Inicio, Explorar, Favoritos, Biblioteca y Buscar.
 - **Menú lateral** (botón ☰): MENÚ, BIBLIOTECA (Álbumes, Canciones, Artistas), CARPETAS (con papelera
   y «Agregar carpeta») y Cola.
