@@ -20,7 +20,6 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.glassplayer.R
 import com.example.glassplayer.ui.theme.Frost
-import com.example.glassplayer.ui.theme.Script
 
 /** Cabecera comun a las pantallas: titulo grande, subtitulo y una accion a la derecha. */
 @Composable
@@ -39,10 +38,10 @@ fun ScreenHeader(
         Column(Modifier.weight(1f)) {
             Text(
                 title,
-                color = Frost.Accent,
-                fontFamily = Script,
-                fontSize = 46.sp,
-                lineHeight = 46.sp,
+                color = Frost.TextPrimary,
+                fontWeight = androidx.compose.ui.text.font.FontWeight.SemiBold,
+                fontSize = 30.sp,
+                lineHeight = 34.sp,
             )
             Text(subtitle, style = MaterialTheme.typography.bodyMedium, color = Frost.TextSecondary)
         }

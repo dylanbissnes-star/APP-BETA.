@@ -8,29 +8,27 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.drawWithCache
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.unit.Dp
-import androidx.compose.ui.draw.shadow
+import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Shape
 import androidx.compose.ui.unit.dp
 import com.example.glassplayer.ui.theme.Frost
 
 /**
- * Tarjeta del tema. En oscuro es vidrio: relleno blanco translucido con un contorno fino claro
- * (sobre el degradado se ve esmerilado). En claro es una tarjeta blanca con sombra suave.
- * `raised` usa el tono elevado (botones, campos, pildoras, elementos activos).
+ * Tarjeta de vidrio: relleno translucido, contorno fino con degradado (mas claro arriba, como el
+ * reflejo de un borde de cristal) y sin sombra dura. `raised` usa el tono mas claro.
  */
 fun Modifier.card(shape: Shape, raised: Boolean = false, outlined: Boolean = true): Modifier = composed {
     val fill = if (raised) Frost.SurfaceHigh else Frost.Surface
-    val line = Frost.Outline
-    val soft = !Frost.OnDark
+    val dark = Frost.OnDark
+    val edge = Brush.verticalGradient(
+        if (dark) listOf(Color.White.copy(alpha = 0.26f), Color.White.copy(alpha = 0.05f))
+        else listOf(Color.White, Color.White.copy(alpha = 0.35f))
+    )
     this
-        .then(
-            if (soft && !raised) Modifier.shadow(6.dp, shape, ambientColor = Color(0x22000000), spotColor = Color(0x22000000))
-            else Modifier
-        )
         .clip(shape)
         .background(fill)
-        .then(if (outlined && !soft) Modifier.border(1.dp, line, shape) else Modifier)
+        .then(if (outlined) Modifier.border(1.dp, edge, shape) else Modifier)
 }
 
 /** Cuadricula muy tenue de fondo (como el fondo de la referencia neon). */

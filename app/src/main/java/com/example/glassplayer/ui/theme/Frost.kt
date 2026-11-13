@@ -44,7 +44,7 @@ class FrostColors(
 )
 
 /** Acento por defecto (verde neon); la persona puede cambiarlo en Ajustes. */
-val DefaultAccent = Color(0xFFC6F135)
+val DefaultAccent = Color(0xFFE5383B)
 
 /** Texto oscuro o claro, segun cual se lea mejor sobre `c`. */
 fun onAccentFor(c: Color): Color = if (c.luminance() > 0.5f) Color(0xFF111113) else Color.White
@@ -74,30 +74,31 @@ fun frostFor(dark: Boolean, accent: Color): FrostColors {
 }
 
 private fun darkPulse(accent: Color, h: Float, gray: Boolean, s: Float): FrostColors {
-    // Negro casi puro con un leve matiz del acento; el acento (neon) va en botones, titulares y detalles
-    val black = Color(0xFF0B0B0B)
-    val onFill = onAccentFor(accent)
+    // Vidrio oscuro sobre fondo fotografico: superficies blancas muy translucidas, contorno fino,
+    // botones principales blancos; el acento elegido marca indicadores, puntos y brillos.
+    val black = Color(0xFF0B0B0D)
     return FrostColors(
         onDark = true,
         content = Color.White,
         secondary = Color.White.copy(alpha = 0.66f),
-        tertiary = Color.White.copy(alpha = 0.40f),
+        tertiary = Color.White.copy(alpha = 0.42f),
         inverse = black,
         bg = black,
         bgColors = listOf(black, black),
-        surface = Color(0xFF151515),
-        surfaceHigh = Color(0xFF1F1F1F),
-        outline = Color.White.copy(alpha = 0.16f),
-        floating = Color(0xFF181818),
+        surface = Color.White.copy(alpha = 0.07f),
+        surfaceHigh = Color.White.copy(alpha = 0.13f),
+        outline = Color.White.copy(alpha = 0.14f),
+        floating = Color(0xE6111114),
         accent = accent.readableOn(black, 4.5f),
-        accentFill = accent,
-        onAccent = onFill,
+        accentFill = Color.White,
+        onAccent = Color(0xFF0B0B0D),
     )
 }
 
 private fun lightSoft(accent: Color, h: Float, gray: Boolean, s: Float): FrostColors {
-    val ink = hsvColor(h, if (gray) 0f else s.coerceAtMost(0.6f), 0.20f)
-    val bg = Color(0xFFEDECEF)
+    // Vidrio claro: cristal blanco esmerilado sobre un fondo suave, tinta oscura y botones negros.
+    val ink = Color(0xFF16161A)
+    val bg = Color(0xFFE9E9EE)
     return FrostColors(
         onDark = false,
         content = ink,
@@ -105,14 +106,14 @@ private fun lightSoft(accent: Color, h: Float, gray: Boolean, s: Float): FrostCo
         tertiary = ink.copy(alpha = 0.44f),
         inverse = Color.White,
         bg = bg,
-        bgColors = listOf(Color(0xFFF4F3F6), Color(0xFFE6E5E9)),
-        surface = Color.White,
-        surfaceHigh = Color(0xFFE3E2E7),
-        outline = ink.copy(alpha = 0.08f),
-        floating = Color.White,
+        bgColors = listOf(Color(0xFFF1F1F5), Color(0xFFE2E2E8)),
+        surface = Color.White.copy(alpha = 0.55f),
+        surfaceHigh = Color.White.copy(alpha = 0.80f),
+        outline = Color.White.copy(alpha = 0.85f),
+        floating = Color(0xEEFFFFFF),
         accent = accent.readableOn(bg),
-        accentFill = accent,
-        onAccent = onAccentFor(accent),
+        accentFill = ink,
+        onAccent = Color.White,
     )
 }
 

@@ -61,7 +61,8 @@ import com.example.glassplayer.ui.components.TrackRow
 import com.example.glassplayer.ui.components.card
 import com.example.glassplayer.ui.components.pressClick
 import com.example.glassplayer.ui.theme.Frost
-import com.example.glassplayer.ui.theme.Script
+import com.example.glassplayer.ui.components.GlowPill
+import androidx.compose.material.icons.rounded.AutoAwesome
 import java.util.Locale
 
 /**
@@ -101,19 +102,19 @@ fun HomeScreen(
         contentPadding = PaddingValues(start = 20.dp, end = 20.dp, top = 0.dp, bottom = 196.dp),
     ) {
         item(key = "headline") {
-            Row(Modifier.fillMaxWidth().padding(top = 4.dp), verticalAlignment = Alignment.CenterVertically) {
+            Column(Modifier.fillMaxWidth().padding(top = 4.dp)) {
                 Text(
-                    "¿Qué vas a\nescuchar hoy?",
-                    color = Frost.Accent,
-                    fontFamily = Script,
-                    fontSize = 52.sp,
-                    lineHeight = 50.sp,
-                    modifier = Modifier.weight(1f),
+                    "¿Qué vas a escuchar hoy?",
+                    color = Frost.TextPrimary,
+                    fontWeight = androidx.compose.ui.text.font.FontWeight.SemiBold,
+                    fontSize = 30.sp,
+                    lineHeight = 36.sp,
                 )
-                Icon(
-                    Icons.Rounded.MusicNote, null,
-                    tint = Frost.Accent,
-                    modifier = Modifier.size(64.dp),
+                Spacer(Modifier.height(14.dp))
+                GlowPill(
+                    text = if (state.library.isEmpty()) "Agregar carpeta" else "Mezclar mi música",
+                    icon = if (state.library.isEmpty()) Icons.Rounded.MusicNote else Icons.Rounded.AutoAwesome,
+                    onClick = if (state.library.isEmpty()) onAddFolder else onPlayAll,
                 )
             }
         }

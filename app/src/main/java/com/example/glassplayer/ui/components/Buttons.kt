@@ -21,6 +21,9 @@ import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.drawBehind
+import androidx.compose.ui.geometry.CornerRadius
+import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.font.FontWeight
@@ -129,7 +132,7 @@ fun ActionPill(
     accent: Boolean = false,
     iconTint: Color? = null,
 ) {
-    val shape = RoundedCornerShape(14.dp)
+    val shape = RoundedCornerShape(50)
     val filled = primary || accent
     val fg = if (filled) Frost.OnAccent else Frost.TextPrimary
     val fill = if (filled) Frost.AccentFill else Frost.SurfaceHigh
@@ -160,5 +163,48 @@ fun OutlineBadge(text: String, modifier: Modifier = Modifier) {
         contentAlignment = Alignment.Center,
     ) {
         Text(text, fontSize = 11.sp, color = Frost.TextSecondary)
+    }
+}
+
+/**
+ * Pildora con brillo (como "Ask Addy" de la referencia): cristal oscuro, contorno con degradado
+ * del color de acento y un resplandor suave detras.
+ */
+@Composable
+fun GlowPill(
+    text: String,
+    onClick: () -> Unit,
+    modifier: Modifier = Modifier,
+    icon: ImageVector? = null,
+) {
+    val accent = Frost.Accent
+    val shape = RoundedCornerShape(50)
+    Row(
+        modifier
+            .pressClick(onClick, pressedScale = 0.95f)
+            .drawBehind {
+                drawRoundRect(
+                    brush = Brush.horizontalGradient(listOf(accent.copy(alpha = 0.35f), Color(0xFF7C5CFF).copy(alpha = 0.30f))),
+                    topLeft = androidx.compose.ui.geometry.Offset(-2.dp.toPx(), 4.dp.toPx()),
+                    size = androidx.compose.ui.geometry.Size(size.width + 4.dp.toPx(), size.height),
+                    cornerRadius = CornerRadius(size.height / 2),
+                    alpha = 0.9f,
+                )
+            }
+            .clip(shape)
+            .background(if (Frost.OnDark) Color(0xFF16161A) else Color.White)
+            .border(
+                1.dp,
+                Brush.horizontalGradient(listOf(accent.copy(alpha = 0.9f), Color(0xFF7C5CFF).copy(alpha = 0.8f))),
+                shape,
+            )
+            .padding(horizontal = 18.dp, vertical = 11.dp),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        if (icon != null) {
+            Icon(icon, null, tint = Frost.TextPrimary, modifier = Modifier.size(18.dp))
+            Spacer(Modifier.width(8.dp))
+        }
+        Text(text, color = Frost.TextPrimary, fontSize = 14.sp, fontWeight = FontWeight.Medium)
     }
 }
