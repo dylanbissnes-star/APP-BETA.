@@ -28,7 +28,8 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.draw.shadow
+import androidx.compose.ui.graphics.Brush
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
@@ -39,9 +40,9 @@ import com.example.glassplayer.ui.theme.Frost
 import java.util.Locale
 
 /**
- * Mini reproductor (como el de la referencia neon): tarjeta oscura con una flecha para abrir el
- * reproductor, portada, titulo en mayusculas, "por artista" y los controles: repetir, anterior,
- * play/pausa (circulo neon), siguiente y aleatorio. Una linea fina de progreso abajo.
+ * Mini reproductor: panel de cristal flotante con una flecha para abrir el reproductor, portada,
+ * titulo, "por artista" y los controles: repetir, anterior, play/pausa (circulo blanco), siguiente y
+ * aleatorio. Una linea fina de progreso abajo.
  */
 @Composable
 fun MiniPlayer(
@@ -58,15 +59,20 @@ fun MiniPlayer(
     onOpen: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
-    val shape = RoundedCornerShape(18.dp)
+    val shape = RoundedCornerShape(20.dp)
     val accent = Frost.Accent
     Column(
         modifier
             .fillMaxWidth()
-            .shadow(14.dp, shape, ambientColor = Frost.Tint.copy(alpha = 0.35f), spotColor = Frost.Tint.copy(alpha = 0.35f))
-            .clip(shape)
-            .background(Frost.Floating)
-            .border(1.dp, Frost.Outline, shape),
+            .glassPanel(shape)
+            // Mientras suena, un fino halo del acento rodea el panel
+            .then(
+                if (playing) Modifier.border(
+                    1.dp,
+                    Brush.linearGradient(listOf(accent.copy(alpha = 0.85f), Color.Transparent, accent.copy(alpha = 0.55f))),
+                    shape,
+                ) else Modifier
+            ),
     ) {
         // Flecha para abrir el reproductor
         Box(

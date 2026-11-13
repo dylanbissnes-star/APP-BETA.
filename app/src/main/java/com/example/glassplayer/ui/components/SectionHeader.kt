@@ -36,7 +36,7 @@ fun SectionHeader(
         horizontalArrangement = Arrangement.SpaceBetween,
         verticalAlignment = Alignment.CenterVertically,
     ) {
-        Text(big, color = Frost.TextPrimary, fontSize = 16.sp, fontWeight = FontWeight.Medium)
+        Text(big, color = Frost.TextPrimary, fontSize = 15.sp, fontWeight = FontWeight.Medium)
         if (seeAll != null) {
             Icon(
                 Icons.AutoMirrored.Rounded.ArrowForward, "Ver todo",

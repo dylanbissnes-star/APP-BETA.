@@ -8,17 +8,14 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.sp
 import com.example.glassplayer.R
 
-/** Texto de la app: Poppins (geometrica, como las referencias). */
+/** Texto de la app: Poppins (como el menu de la referencia), con peso Light para los textos finos. */
 val Poppins = FontFamily(
     Font(R.font.poppins_regular, FontWeight.Normal),
-    Font(R.font.poppins_regular, FontWeight.Light),
+    Font(R.font.poppins_light, FontWeight.Light),
     Font(R.font.poppins_medium, FontWeight.Medium),
     Font(R.font.poppins_semibold, FontWeight.SemiBold),
     Font(R.font.poppins_bold, FontWeight.Bold),
 )
-
-/** Letra cursiva (firma) para los titulares grandes, como «What will you listen today?». */
-val Script = FontFamily(Font(R.font.mr_de_haviland, FontWeight.Normal))
 
 private fun Typography.withFont(f: FontFamily) = copy(
     displayLarge = displayLarge.copy(fontFamily = f), displayMedium = displayMedium.copy(fontFamily = f),

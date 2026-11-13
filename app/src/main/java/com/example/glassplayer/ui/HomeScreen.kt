@@ -11,7 +11,6 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
@@ -22,55 +21,38 @@ import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.outlined.CreateNewFolder
+import androidx.compose.material.icons.outlined.Search
 import androidx.compose.material.icons.rounded.Add
-import androidx.compose.material.icons.rounded.Shuffle
-import androidx.compose.material.icons.rounded.Search
-import androidx.compose.material.icons.automirrored.rounded.ArrowForward
-import androidx.compose.material.icons.rounded.CreateNewFolder
-import androidx.compose.material.icons.rounded.Favorite
-import androidx.compose.material.icons.rounded.MusicNote
 import androidx.compose.material.icons.rounded.PlayArrow
 import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.saveable.rememberSaveable
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.draw.drawWithContent
-import androidx.compose.ui.geometry.Offset
-import androidx.compose.ui.graphics.BlendMode
 import androidx.compose.ui.graphics.Brush
-import androidx.compose.ui.graphics.CompositingStrategy
-import androidx.compose.ui.graphics.graphicsLayer
-import androidx.compose.ui.layout.ContentScale
-import androidx.compose.ui.draw.drawBehind
-import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import coil.compose.AsyncImage
-import com.example.glassplayer.ui.components.ActionPill
 import com.example.glassplayer.PlayerUiState
 import com.example.glassplayer.data.Track
 import com.example.glassplayer.ui.components.CoverThumb
-import com.example.glassplayer.ui.components.SectionHeader
 import com.example.glassplayer.ui.components.TrackRow
 import com.example.glassplayer.ui.components.card
 import com.example.glassplayer.ui.components.pressClick
 import com.example.glassplayer.ui.theme.Frost
-import com.example.glassplayer.ui.theme.Script
 import java.util.Locale
 
 /**
- * Inicio (estilo neon):
- *  - Titular cursivo «¿Qué vas a escuchar hoy?» con una nota musical
- *  - Buscador (abre Buscar) y boton para reproducir todo en aleatorio
- *  - «Descubre tus artistas favoritos»: fila de artistas con su foto
- *  - «Tus carpetas» y «Favoritas»
- *  - «Tu colección»: tabla de canciones, la que suena rellena con el acento
+ * Inicio (estilo cristal ahumado): un tablero con una columna de cristal por carpeta,
+ * o una lista plana de canciones. Arriba: buscador, boton fantasma «Carpeta» y boton blanco «Reproducir».
  */
 @Composable
 fun HomeScreen(
@@ -87,140 +69,116 @@ fun HomeScreen(
     onOpenArtists: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
-    val folders = remember(state.library, state.folders) { folderEntries(state).filter { it.tracks.isNotEmpty() } }
-    val artists = remember(state.library) { artistsOf(state.library).take(10) }
-    val songs = remember(state.library) { state.library.take(8) }
-    val favorites = remember(state.library, state.favorites) {
-        state.library.filter { it.id in state.favorites }.take(10)
+    val folders = remember(state.library, state.folders) {
+        folderEntries(state).filter { it.tracks.isNotEmpty() && it.key != SOURCE_ALL }
     }
+    val artists = remember(state.library) { artistsOf(state.library).take(12) }
+    val songs = remember(state.library) { state.library.take(30) }
     val currentId = state.current?.id
+    var mode by rememberSaveable { mutableIntStateOf(0) } // 0 tablero, 1 lista
 
     LazyColumn(
         modifier.fillMaxSize(),
-        // Espacio inferior para el mini reproductor y la barra de pestanas
-        contentPadding = PaddingValues(start = 20.dp, end = 20.dp, top = 0.dp, bottom = 196.dp),
+        contentPadding = PaddingValues(top = 0.dp, bottom = 196.dp),
     ) {
-        item(key = "headline") {
-            Row(Modifier.fillMaxWidth().padding(top = 4.dp), verticalAlignment = Alignment.CenterVertically) {
+        item(key = "top") {
+            Column(Modifier.padding(horizontal = 20.dp)) {
                 Text(
-                    "¿Qué vas a\nescuchar hoy?",
-                    color = Frost.Accent,
-                    fontFamily = Script,
-                    fontSize = 52.sp,
-                    lineHeight = 50.sp,
-                    modifier = Modifier.weight(1f),
+                    "Biblioteca", color = Frost.TextPrimary, fontSize = 26.sp, fontWeight = FontWeight.SemiBold,
                 )
-                Icon(
-                    Icons.Rounded.MusicNote, null,
-                    tint = Frost.Accent,
-                    modifier = Modifier.size(64.dp),
+                Text(
+                    "${state.library.size} canciones · ${folders.size} carpetas",
+                    color = Frost.TextSecondary, fontSize = 13.sp, fontWeight = FontWeight.Light,
                 )
-            }
-        }
-
-        item(key = "search") {
-            Row(
-                Modifier.fillMaxWidth().padding(top = 18.dp),
-                horizontalArrangement = Arrangement.spacedBy(10.dp),
-                verticalAlignment = Alignment.CenterVertically,
-            ) {
+                Spacer(Modifier.height(14.dp))
                 Row(
                     Modifier
-                        .weight(1f)
-                        .height(50.dp)
+                        .fillMaxWidth()
+                        .height(46.dp)
                         .pressClick(onOpenSearch, pressedScale = 0.98f)
-                        .card(RoundedCornerShape(14.dp), raised = true)
+                        .card(RoundedCornerShape(12.dp), raised = true)
                         .padding(horizontal = 14.dp),
                     verticalAlignment = Alignment.CenterVertically,
                 ) {
-                    Icon(Icons.Rounded.Search, null, tint = Frost.TextSecondary, modifier = Modifier.size(22.dp))
+                    Icon(Icons.Outlined.Search, null, tint = Frost.TextSecondary, modifier = Modifier.size(20.dp))
                     Text(
-                        "Canción, álbum, artista…",
-                        color = Frost.TextTertiary,
-                        fontSize = 13.sp,
-                        maxLines = 1,
-                        modifier = Modifier.padding(start = 10.dp),
+                        "Buscar canción, álbum, artista…",
+                        color = Frost.TextTertiary, fontSize = 13.sp, fontWeight = FontWeight.Light,
+                        maxLines = 1, modifier = Modifier.padding(start = 10.dp),
                     )
                 }
-                Box(
-                    Modifier
-                        .size(50.dp)
-                        .pressClick(if (state.library.isEmpty()) onAddFolder else onPlayAll, pressedScale = 0.92f)
-                        .clip(RoundedCornerShape(14.dp))
-                        .background(Frost.AccentFill),
-                    contentAlignment = Alignment.Center,
-                ) {
-                    Icon(
-                        if (state.library.isEmpty()) Icons.Rounded.CreateNewFolder else Icons.Rounded.Shuffle,
-                        if (state.library.isEmpty()) "Agregar carpeta" else "Reproducir todo en aleatorio",
-                        tint = Frost.OnAccent,
-                        modifier = Modifier.size(24.dp),
+                Spacer(Modifier.height(10.dp))
+                Row(horizontalArrangement = Arrangement.spacedBy(10.dp), verticalAlignment = Alignment.CenterVertically) {
+                    GhostButton("Carpeta", onAddFolder)
+                    SolidButton(
+                        "Reproducir",
+                        onClick = if (state.library.isEmpty()) onAddFolder else onPlayAll,
                     )
+                    Spacer(Modifier.weight(1f))
+                    Segmented(mode) { mode = it }
                 }
+                Spacer(Modifier.height(16.dp))
             }
         }
 
-        if (artists.isNotEmpty()) {
-            item(key = "h-artists") { SectionHeader("Top", "Descubre tus artistas favoritos", seeAll = onOpenArtists) }
-            item(key = "artists") {
+        if (mode == 0) {
+            item(key = "board") {
                 LazyRow(
                     horizontalArrangement = Arrangement.spacedBy(12.dp),
-                    contentPadding = PaddingValues(end = 20.dp),
+                    contentPadding = PaddingValues(horizontal = 20.dp),
                 ) {
-                    items(artists, key = { "ar-${it.name}" }) { artist ->
-                        ArtistTile(artist, onClick = { onOpenArtist(artist.name) })
+                    items(folders, key = { it.key }) { entry ->
+                        BoardColumn(
+                            entry = entry,
+                            currentId = currentId,
+                            onOpen = { onOpenFolder(entry) },
+                            onPlayFolder = { onPlayFolder(entry) },
+                            onPlayAt = { i -> onPlay(entry.tracks, i) },
+                        )
+                    }
+                    item(key = "add") { AddColumn(onAddFolder) }
+                }
+            }
+            if (artists.isNotEmpty()) {
+                item(key = "h-artists") {
+                    Row(
+                        Modifier.fillMaxWidth().padding(start = 20.dp, end = 20.dp, top = 24.dp, bottom = 12.dp),
+                        verticalAlignment = Alignment.CenterVertically,
+                    ) {
+                        Text(
+                            "ARTISTAS", color = Frost.TextSecondary, fontSize = 12.sp,
+                            fontWeight = FontWeight.Medium, letterSpacing = 1.4.sp,
+                            modifier = Modifier.weight(1f),
+                        )
+                        Text(
+                            "Ver todos", color = Frost.TextSecondary, fontSize = 12.sp,
+                            fontWeight = FontWeight.Light,
+                            modifier = Modifier.pressClick(onOpenArtists, pressedScale = 0.95f),
+                        )
+                    }
+                }
+                item(key = "artists") {
+                    LazyRow(
+                        horizontalArrangement = Arrangement.spacedBy(14.dp),
+                        contentPadding = PaddingValues(horizontal = 20.dp),
+                    ) {
+                        items(artists, key = { "ar-${it.name}" }) { artist ->
+                            Column(
+                                Modifier.width(72.dp).pressClick({ onOpenArtist(artist.name) }, pressedScale = 0.95f),
+                                horizontalAlignment = Alignment.CenterHorizontally,
+                            ) {
+                                CoverThumb(artist.cover, 64.dp, corner = 32.dp)
+                                Spacer(Modifier.height(6.dp))
+                                Text(
+                                    artist.name, color = Frost.TextSecondary, fontSize = 11.sp,
+                                    fontWeight = FontWeight.Light, maxLines = 1, overflow = TextOverflow.Ellipsis,
+                                )
+                            }
+                        }
                     }
                 }
             }
-        }
-
-        item(key = "h-folders") { SectionHeader("Tus", "Tus carpetas") }
-        item(key = "folders") {
-            LazyRow(
-                horizontalArrangement = Arrangement.spacedBy(12.dp),
-                contentPadding = PaddingValues(end = 20.dp),
-            ) {
-                item(key = "add") { AddFolderCard(onAddFolder) }
-                items(folders, key = { it.key }) { entry ->
-                    FolderCard(entry, onOpen = { onOpenFolder(entry) }, onPlay = { onPlayFolder(entry) })
-                }
-            }
-        }
-
-        if (favorites.isNotEmpty()) {
-            item(key = "h-favs") { SectionHeader("", "Tus favoritas") }
-            item(key = "favs") {
-                LazyRow(
-                    horizontalArrangement = Arrangement.spacedBy(12.dp),
-                    contentPadding = PaddingValues(end = 20.dp),
-                ) {
-                    itemsIndexed(favorites, key = { _, t -> "f-${t.id}" }) { i, track ->
-                        CoverCard(track, onClick = { onPlay(favorites, i) }, onUnfavorite = { onToggleFavorite(track.id) })
-                    }
-                }
-            }
-        }
-
-        if (songs.isNotEmpty()) {
-            item(key = "h-songs") {
-                Row(
-                    Modifier.fillMaxWidth().padding(top = 22.dp, bottom = 12.dp),
-                    verticalAlignment = Alignment.CenterVertically,
-                ) {
-                    Text(
-                        "Tu colección",
-                        color = Frost.TextPrimary, fontSize = 16.sp, fontWeight = FontWeight.Medium,
-                        modifier = Modifier.weight(1f),
-                    )
-                    // Acciones: reproducir, aleatorio y ver todo (circulos como en la referencia)
-                    CircleAction(Icons.Rounded.PlayArrow, "Reproducir", filled = true) { onPlay(songs, 0) }
-                    Spacer(Modifier.width(8.dp))
-                    CircleAction(Icons.Rounded.Shuffle, "Aleatorio", filled = false) { onPlay(songs.shuffled(), 0) }
-                    Spacer(Modifier.width(8.dp))
-                    CircleAction(Icons.AutoMirrored.Rounded.ArrowForward, "Ver todo", filled = false, onClick = onOpenLibrary)
-                }
-            }
-            item(key = "table-head") { TableHead() }
+        } else {
             itemsIndexed(songs, key = { _, t -> "s-${t.id}" }) { i, track ->
                 TrackRow(
                     track = track,
@@ -230,206 +188,168 @@ fun HomeScreen(
                     index = i + 1,
                     favorite = track.id in state.favorites,
                     onFavorite = { onToggleFavorite(track.id) },
+                    modifier = Modifier.padding(horizontal = 20.dp),
                 )
+            }
+            if (state.library.size > songs.size) {
+                item(key = "more") {
+                    Box(Modifier.fillMaxWidth().padding(top = 8.dp), contentAlignment = Alignment.Center) {
+                        GhostButton("Ver toda la biblioteca", onOpenLibrary)
+                    }
+                }
             }
         }
     }
 }
 
-/** Boton circular de la cabecera de la coleccion: relleno con el acento o solo contorno. */
+/** Boton con solo contorno de cristal (como «Import» de la referencia). */
 @Composable
-private fun CircleAction(icon: ImageVector, description: String, filled: Boolean, onClick: () -> Unit) {
-    Box(
+private fun GhostButton(label: String, onClick: () -> Unit) {
+    val shape = RoundedCornerShape(12.dp)
+    Row(
         Modifier
-            .size(34.dp)
-            .pressClick(onClick, pressedScale = 0.9f)
-            .clip(CircleShape)
-            .then(if (filled) Modifier.background(Frost.AccentFill) else Modifier.border(1.5.dp, Frost.TextSecondary, CircleShape)),
-        contentAlignment = Alignment.Center,
-    ) {
-        Icon(icon, description, tint = if (filled) Frost.OnAccent else Frost.TextPrimary, modifier = Modifier.size(19.dp))
-    }
-}
-
-/** Cabecera de la tabla: «# Título … Tiempo». */
-@Composable
-private fun TableHead() {
-    Row(Modifier.fillMaxWidth().padding(start = 10.dp, end = 14.dp, bottom = 4.dp, top = 2.dp)) {
-        Text("#", color = Frost.TextTertiary, fontSize = 11.sp, modifier = Modifier.width(24.dp))
-        Text("Título", color = Frost.TextTertiary, fontSize = 11.sp, modifier = Modifier.weight(1f).padding(start = 56.dp))
-        Text("Tiempo", color = Frost.TextTertiary, fontSize = 11.sp)
-    }
-}
-
-/** Foto de artista con su nombre debajo (fila «Descubre tus artistas favoritos»). */
-@Composable
-private fun ArtistTile(artist: ArtistEntry, onClick: () -> Unit) {
-    Column(
-        Modifier
-            .width(112.dp)
-            .pressClick(onClick, pressedScale = 0.96f),
-        horizontalAlignment = Alignment.CenterHorizontally,
-    ) {
-        CoverThumb(artist.cover, 112.dp, corner = 14.dp)
-        Text(
-            artist.name,
-            color = Frost.TextPrimary,
-            fontSize = 12.sp,
-            fontWeight = FontWeight.Medium,
-            maxLines = 1,
-            overflow = TextOverflow.Ellipsis,
-            modifier = Modifier.padding(top = 8.dp),
-        )
-    }
-}
-
-/** Tarjeta con la portada a pantalla completa, titulo y artista encima y corazon (como "Top Songs"). */
-@Composable
-private fun CoverCard(track: Track, onClick: () -> Unit, onUnfavorite: () -> Unit) {
-    val shape = RoundedCornerShape(18.dp)
-    Box(
-        Modifier
-            .width(168.dp)
-            .height(212.dp)
-            .pressClick(onClick, pressedScale = 0.97f)
+            .pressClick(onClick, pressedScale = 0.96f)
             .clip(shape)
-            .background(Brush.linearGradient(listOf(Frost.SurfaceHigh, Frost.Surface))),
+            .border(1.dp, Brush.linearGradient(listOf(Frost.EdgeLight, Frost.EdgeDark)), shape)
+            .padding(horizontal = 14.dp, vertical = 9.dp),
+        verticalAlignment = Alignment.CenterVertically,
     ) {
-        if (track.artUri != null) {
-            AsyncImage(
-                model = track.artUri,
-                contentDescription = null,
-                contentScale = ContentScale.Crop,
-                modifier = Modifier.fillMaxSize(),
-            )
-        } else {
-            Icon(
-                Icons.Rounded.MusicNote, null, tint = Frost.TextTertiary,
-                modifier = Modifier.align(Alignment.Center).size(48.dp),
-            )
-        }
-        Box(
-            Modifier
-                .fillMaxSize()
-                .background(Brush.verticalGradient(0.45f to Color.Transparent, 1f to Color.Black.copy(alpha = 0.72f)))
-        )
-        Column(Modifier.align(Alignment.BottomStart).padding(start = 14.dp, end = 54.dp, bottom = 14.dp)) {
+        Icon(Icons.Outlined.CreateNewFolder, null, tint = Frost.TextPrimary, modifier = Modifier.size(16.dp))
+        Text(label, color = Frost.TextPrimary, fontSize = 13.sp, fontWeight = FontWeight.Medium,
+            modifier = Modifier.padding(start = 7.dp))
+    }
+}
+
+/** Boton blanco principal (como «New loan» de la referencia). */
+@Composable
+private fun SolidButton(label: String, onClick: () -> Unit) {
+    Row(
+        Modifier
+            .pressClick(onClick, pressedScale = 0.96f)
+            .clip(RoundedCornerShape(12.dp))
+            .background(Frost.AccentFill)
+            .padding(horizontal = 14.dp, vertical = 9.dp),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        Icon(Icons.Rounded.PlayArrow, null, tint = Frost.OnAccent, modifier = Modifier.size(17.dp))
+        Text(label, color = Frost.OnAccent, fontSize = 13.sp, fontWeight = FontWeight.SemiBold,
+            modifier = Modifier.padding(start = 5.dp))
+    }
+}
+
+/** Control segmentado Tablero / Lista. */
+@Composable
+private fun Segmented(selected: Int, onSelect: (Int) -> Unit) {
+    val shape = RoundedCornerShape(12.dp)
+    Row(
+        Modifier
+            .clip(shape)
+            .border(1.dp, Brush.linearGradient(listOf(Frost.EdgeLight, Frost.EdgeDark)), shape)
+            .padding(3.dp),
+    ) {
+        listOf("Tablero", "Lista").forEachIndexed { i, label ->
+            val on = i == selected
             Text(
-                track.title, color = Color.White, fontSize = 14.sp, fontWeight = FontWeight.SemiBold,
-                maxLines = 1, overflow = TextOverflow.Ellipsis,
+                label,
+                color = if (on) Frost.TextPrimary else Frost.TextSecondary,
+                fontSize = 12.sp,
+                fontWeight = if (on) FontWeight.Medium else FontWeight.Light,
+                modifier = Modifier
+                    .pressClick({ onSelect(i) }, pressedScale = 0.96f)
+                    .clip(RoundedCornerShape(9.dp))
+                    .background(if (on) Frost.SurfaceHigh else androidx.compose.ui.graphics.Color.Transparent)
+                    .padding(horizontal = 11.dp, vertical = 6.dp),
             )
-            Text(
-                track.artist, color = Color.White.copy(alpha = 0.75f), fontSize = 12.sp,
-                maxLines = 1, overflow = TextOverflow.Ellipsis,
-            )
-        }
-        Box(
-            Modifier
-                .align(Alignment.BottomEnd)
-                .padding(10.dp)
-                .size(36.dp)
-                .pressClick(onUnfavorite, pressedScale = 0.88f)
-                .clip(RoundedCornerShape(10.dp))
-                .background(Color.White.copy(alpha = 0.24f)),
-            contentAlignment = Alignment.Center,
-        ) {
-            Icon(Icons.Rounded.Favorite, "Quitar de favoritos", tint = Color.White, modifier = Modifier.size(20.dp))
         }
     }
 }
 
-/** Tarjeta de carpeta: 3 portadas superpuestas, nombre, conteo y un boton para reproducirla. */
+/** Columna del tablero: una carpeta, con contador, reproducir y sus primeras canciones. */
 @Composable
-private fun FolderCard(entry: FolderEntry, onOpen: () -> Unit, onPlay: () -> Unit) {
-    val covers: List<Any?> = remember(entry.tracks) {
-        val uris = entry.tracks.mapNotNull { it.artUri }.distinct().take(3)
-        if (uris.isEmpty()) listOf(null, null, null) else uris
-    }
-    val ring = Frost.Floating
-    Column(
-        Modifier
-            .width(158.dp)
-            .height(176.dp)
-            .pressClick(onOpen, pressedScale = 0.97f)
-            .card(RoundedCornerShape(18.dp))
-            .padding(14.dp),
-    ) {
-        Box(Modifier.fillMaxWidth().height(84.dp)) {
-            covers.forEachIndexed { i, art ->
-                CoverThumb(
-                    art, 62.dp, corner = 14.dp,
-                    modifier = Modifier
-                        .offset(x = (i * 30).dp, y = if (i == 1) 0.dp else 12.dp)
-                        .border(2.dp, ring, RoundedCornerShape(14.dp)),
-                )
-            }
-        }
-        Spacer(Modifier.height(10.dp))
-        Text(
-            entry.label,
-            color = Frost.TextPrimary,
-            fontSize = 14.sp,
-            fontWeight = FontWeight.SemiBold,
-            maxLines = 1,
-            overflow = TextOverflow.Ellipsis,
-        )
-        Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
+private fun BoardColumn(
+    entry: FolderEntry,
+    currentId: String?,
+    onOpen: () -> Unit,
+    onPlayFolder: () -> Unit,
+    onPlayAt: (Int) -> Unit,
+) {
+    val shape = RoundedCornerShape(20.dp)
+    Column(Modifier.width(284.dp).card(shape).padding(12.dp)) {
+        Row(Modifier.fillMaxWidth().padding(start = 4.dp, bottom = 10.dp), verticalAlignment = Alignment.CenterVertically) {
             Text(
-                songsLabel(entry.tracks.size),
-                color = Frost.TextSecondary,
-                fontSize = 12.sp,
-                modifier = Modifier.weight(1f),
-                maxLines = 1,
+                entry.label, color = Frost.TextPrimary, fontSize = 15.sp, fontWeight = FontWeight.Medium,
+                maxLines = 1, overflow = TextOverflow.Ellipsis,
+                modifier = Modifier.weight(1f, fill = false).pressClick(onOpen, pressedScale = 0.98f),
             )
             Box(
-                Modifier
-                    .size(34.dp)
-                    .pressClick(onPlay, pressedScale = 0.9f)
-                    .clip(CircleShape)
-                    .background(Frost.AccentFill),
-                contentAlignment = Alignment.Center,
+                Modifier.padding(start = 8.dp).clip(CircleShape).background(Frost.SurfaceHigh)
+                    .padding(horizontal = 8.dp, vertical = 2.dp),
             ) {
-                Icon(Icons.Rounded.PlayArrow, "Reproducir carpeta", tint = Frost.OnAccent, modifier = Modifier.size(20.dp))
+                Text(String.format(Locale.US, "%d", entry.tracks.size), color = Frost.TextSecondary, fontSize = 11.sp)
             }
+            Spacer(Modifier.weight(1f))
+            Box(
+                Modifier.size(30.dp).pressClick(onPlayFolder, pressedScale = 0.9f).clip(CircleShape)
+                    .border(1.dp, Brush.linearGradient(listOf(Frost.EdgeLight, Frost.EdgeDark)), CircleShape),
+                contentAlignment = Alignment.Center,
+            ) { Icon(Icons.Rounded.PlayArrow, "Reproducir carpeta", tint = Frost.TextPrimary, modifier = Modifier.size(18.dp)) }
+        }
+        entry.tracks.take(5).forEachIndexed { i, t ->
+            val cur = t.id == currentId
+            Row(
+                Modifier
+                    .padding(vertical = 3.dp)
+                    .fillMaxWidth()
+                    .pressClick({ onPlayAt(i) }, pressedScale = 0.985f)
+                    .card(RoundedCornerShape(14.dp), raised = cur)
+                    .padding(8.dp),
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                CoverThumb(t.artUri, 38.dp, corner = 10.dp)
+                Column(Modifier.weight(1f).padding(start = 10.dp)) {
+                    Text(
+                        t.title, color = if (cur) Frost.Accent else Frost.TextPrimary,
+                        fontSize = 13.sp, fontWeight = FontWeight.Medium,
+                        maxLines = 1, overflow = TextOverflow.Ellipsis,
+                    )
+                    Text(
+                        t.artist, color = Frost.TextSecondary, fontSize = 11.sp, fontWeight = FontWeight.Light,
+                        maxLines = 1, overflow = TextOverflow.Ellipsis,
+                    )
+                }
+            }
+        }
+        Row(
+            Modifier.fillMaxWidth().padding(top = 6.dp).pressClick(onOpen, pressedScale = 0.98f).padding(6.dp),
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            Icon(Icons.Rounded.Add, null, tint = Frost.TextSecondary, modifier = Modifier.size(16.dp))
+            Text(
+                if (entry.tracks.size > 5) "Ver las ${entry.tracks.size} canciones" else "Abrir carpeta",
+                color = Frost.TextSecondary, fontSize = 12.sp, fontWeight = FontWeight.Light,
+                modifier = Modifier.padding(start = 6.dp),
+            )
         }
     }
 }
 
-/** Primera tarjeta de la fila: agregar una carpeta del telefono (siempre visible). */
+/** Columna final «Agregar carpeta», con borde de cristal. */
 @Composable
-private fun AddFolderCard(onClick: () -> Unit) {
+private fun AddColumn(onClick: () -> Unit) {
+    val shape = RoundedCornerShape(20.dp)
     Column(
         Modifier
-            .width(158.dp)
-            .height(176.dp)
+            .width(180.dp)
+            .height(120.dp)
             .pressClick(onClick, pressedScale = 0.97f)
-            .card(RoundedCornerShape(18.dp), raised = true)
-            .padding(12.dp),
-        horizontalAlignment = Alignment.CenterHorizontally,
+            .clip(shape)
+            .border(1.dp, Brush.linearGradient(listOf(Frost.EdgeLight, Frost.EdgeDark)), shape),
         verticalArrangement = Arrangement.Center,
+        horizontalAlignment = Alignment.CenterHorizontally,
     ) {
-        Box(
-            Modifier
-                .size(52.dp)
-                .clip(CircleShape)
-                .background(Frost.Accent.copy(alpha = 0.20f))
-                .border(1.dp, Frost.Accent.copy(alpha = 0.6f), CircleShape),
-            contentAlignment = Alignment.Center,
-        ) {
-            Icon(Icons.Rounded.Add, "Agregar carpeta", tint = Frost.Accent, modifier = Modifier.size(28.dp))
-        }
-        Text(
-            "Agregar carpeta",
-            color = Frost.TextPrimary,
-            fontSize = 14.sp,
-            fontWeight = FontWeight.SemiBold,
-            modifier = Modifier.padding(top = 12.dp),
-        )
-        Text(
-            "de tu teléfono",
-            color = Frost.TextSecondary,
-            fontSize = 12.sp,
-        )
+        Icon(Icons.Outlined.CreateNewFolder, null, tint = Frost.TextPrimary, modifier = Modifier.size(24.dp))
+        Spacer(Modifier.height(8.dp))
+        Text("Agregar carpeta", color = Frost.TextPrimary, fontSize = 13.sp, fontWeight = FontWeight.Medium)
     }
 }
 

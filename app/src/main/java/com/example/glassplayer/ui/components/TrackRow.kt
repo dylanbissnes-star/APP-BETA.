@@ -19,6 +19,10 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.geometry.Size
+import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.geometry.CornerRadius
+import androidx.compose.ui.draw.drawBehind
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
@@ -82,16 +86,28 @@ fun TrackRow(
     trailing: (@Composable () -> Unit)? = null,
 ) {
     val shape = RoundedCornerShape(14.dp)
-    val titleColor = if (isCurrent) Frost.OnAccent else Frost.TextPrimary
-    val subColor = if (isCurrent) Frost.OnAccent.copy(alpha = 0.72f) else Frost.TextSecondary
-    val dimColor = if (isCurrent) Frost.OnAccent.copy(alpha = 0.72f) else Frost.TextTertiary
+    val accent = Frost.Accent
+    val titleColor = Frost.TextPrimary
+    val subColor = Frost.TextSecondary
+    val dimColor = Frost.TextTertiary
+    // La cancion que suena se eleva (cristal mas claro) y lleva una barra de acento a la izquierda
     Row(
         modifier
             .padding(vertical = 3.dp)
             .fillMaxWidth()
             .pressClick(onClick, pressedScale = 0.985f)
-            .then(if (isCurrent) Modifier.clip(shape).background(Frost.AccentFill) else Modifier.card(shape))
-            .padding(start = if (index != null) 10.dp else 8.dp, end = 4.dp, top = 7.dp, bottom = 7.dp),
+            .card(shape, raised = isCurrent)
+            .drawBehind {
+                if (isCurrent) {
+                    drawRoundRect(
+                        color = accent,
+                        topLeft = Offset(0f, size.height * 0.28f),
+                        size = Size(3.dp.toPx(), size.height * 0.44f),
+                        cornerRadius = CornerRadius(2.dp.toPx()),
+                    )
+                }
+            }
+            .padding(start = if (index != null) 12.dp else 10.dp, end = 4.dp, top = 7.dp, bottom = 7.dp),
         verticalAlignment = Alignment.CenterVertically,
     ) {
         if (index != null) {
@@ -111,7 +127,7 @@ fun TrackRow(
             Text(
                 track.title,
                 style = MaterialTheme.typography.titleMedium,
-                fontWeight = if (isCurrent) FontWeight.Bold else FontWeight.SemiBold,
+                fontWeight = if (isCurrent) FontWeight.SemiBold else FontWeight.Medium,
                 fontSize = 14.sp,
                 color = titleColor,
                 maxLines = 1,
@@ -129,7 +145,7 @@ fun TrackRow(
             trailing()
         } else {
             if (isCurrent) {
-                EqBars(active = playing, color = Frost.OnAccent, modifier = Modifier.padding(end = 8.dp))
+                EqBars(active = playing, color = Frost.Accent, modifier = Modifier.padding(end = 8.dp))
             } else if (track.durationMs > 0) {
                 Text(
                     formatTime(track.durationMs),
@@ -144,7 +160,7 @@ fun TrackRow(
                     if (favorite) "Quitar de favoritos" else "Añadir a favoritos",
                     onFavorite,
                     size = 38.dp, iconSize = 19.dp,
-                    tint = if (favorite) (if (isCurrent) Frost.OnAccent else Frost.Accent) else dimColor,
+                    tint = if (favorite) Frost.Accent else dimColor,
                 )
             }
         }

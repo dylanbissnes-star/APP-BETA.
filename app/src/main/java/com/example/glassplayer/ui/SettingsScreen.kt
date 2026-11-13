@@ -1,6 +1,13 @@
 package com.example.glassplayer.ui
 
 import androidx.compose.foundation.background
+import com.example.glassplayer.ui.components.WallpaperChoice
+import com.example.glassplayer.R
+import coil.compose.AsyncImage
+import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.draw.blur
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.border
 import androidx.compose.foundation.gestures.detectHorizontalDragGestures
 import androidx.compose.foundation.gestures.detectTapGestures
@@ -60,10 +67,10 @@ import kotlin.math.roundToInt
 
 /** Colores sugeridos; ademas se puede mezclar cualquiera con los deslizadores. */
 private val Presets = listOf(
-    Color(0xFFC6F135), // verde neon (por defecto)
-    Color(0xFF4ADE80), // verde
-    Color(0xFFFFC21A), // ambar
+    Color(0xFFFF3B30), // rojo (por defecto)
     Color(0xFFFF8A3D), // naranja
+    Color(0xFFFFC21A), // ambar
+    Color(0xFF4ADE80), // verde
     Color(0xFFFF5A5F), // coral
     Color(0xFFF0189E), // rosa intenso
     Color(0xFFB66DFF), // violeta
@@ -89,8 +96,9 @@ fun SettingsScreen(
     onAccent: (Color) -> Unit,
     dark: Boolean,
     onDark: (Boolean) -> Unit,
-    playerAccentBg: Boolean,
-    onPlayerAccentBg: (Boolean) -> Unit,
+    wallpaper: Int,
+    onWallpaper: (Int) -> Unit,
+    cover: Any?,
     onClearLyrics: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
@@ -165,12 +173,20 @@ fun SettingsScreen(
             // --- Apariencia ---
             Section("Apariencia") {
                 SwitchRow("Modo oscuro", "Fondo oscuro o claro en toda la app", dark, onDark)
-                Spacer(Modifier.height(6.dp))
-                SwitchRow(
-                    "Reproductor con el fondo del tema",
-                    "Si lo apagas, el reproductor muestra la portada desenfocada.",
-                    playerAccentBg, onPlayerAccentBg,
+            }
+
+            // --- Fondo ---
+            Section("Fondo") {
+                Text(
+                    "El cristal esmerilado desenfoca lo que hay detrás. Elige qué imagen queda detrás.",
+                    color = Frost.TextSecondary, fontSize = 13.sp, lineHeight = 18.sp,
                 )
+                Spacer(Modifier.height(12.dp))
+                Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+                    WallpaperTile("Seda", WallpaperChoice.SILK, wallpaper, onWallpaper, Modifier.weight(1f), cover)
+                    WallpaperTile("Bruma", WallpaperChoice.MIST, wallpaper, onWallpaper, Modifier.weight(1f), cover)
+                    WallpaperTile("Portada", WallpaperChoice.COVER, wallpaper, onWallpaper, Modifier.weight(1f), cover)
+                }
             }
 
             // --- Letras ---
@@ -189,9 +205,9 @@ fun SettingsScreen(
 
 @Composable
 private fun Section(title: String, content: @Composable () -> Unit) {
-    val shape = RoundedCornerShape(24.dp)
+    val shape = RoundedCornerShape(20.dp)
     Column(Modifier.fillMaxWidth().card(shape).padding(18.dp)) {
-        Text(title, color = Frost.TextPrimary, fontSize = 17.sp, fontWeight = FontWeight.Bold)
+        Text(title.uppercase(), color = Frost.TextSecondary, fontSize = 12.sp, fontWeight = FontWeight.Medium, letterSpacing = 1.4.sp)
         Spacer(Modifier.height(12.dp))
         content()
     }
@@ -204,21 +220,22 @@ private fun AccentPreview(accent: Color, dark: Boolean) {
     Row(
         Modifier
             .fillMaxWidth()
-            .clip(RoundedCornerShape(20.dp))
+            .clip(RoundedCornerShape(16.dp))
             .background(Brush.verticalGradient(f.bgColors))
+            .border(1.dp, Brush.linearGradient(listOf(f.edgeLight, f.edgeDark)), RoundedCornerShape(16.dp))
             .padding(16.dp),
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.spacedBy(14.dp),
     ) {
         Box(
-            Modifier.clip(RoundedCornerShape(50)).background(f.content).padding(horizontal = 16.dp, vertical = 9.dp),
-        ) { Text("Aleatorio", color = f.inverse, fontSize = 13.sp, fontWeight = FontWeight.SemiBold) }
+            Modifier.clip(RoundedCornerShape(12.dp)).background(f.accentFill).padding(horizontal = 16.dp, vertical = 9.dp),
+        ) { Text("Aleatorio", color = f.onAccent, fontSize = 13.sp, fontWeight = FontWeight.SemiBold) }
         Box(Modifier.size(40.dp).clip(CircleShape).background(f.accentFill), contentAlignment = Alignment.Center) {
             Icon(Icons.Rounded.PlayArrow, null, tint = f.onAccent, modifier = Modifier.size(24.dp))
         }
-        Icon(Icons.Rounded.Favorite, null, tint = f.accentFill, modifier = Modifier.size(26.dp))
+        Icon(Icons.Rounded.Favorite, null, tint = f.accent, modifier = Modifier.size(26.dp))
         Box(Modifier.weight(1f).height(4.dp).clip(CircleShape).background(f.outline)) {
-            Box(Modifier.fillMaxWidth(0.6f).height(4.dp).background(f.accentFill))
+            Box(Modifier.fillMaxWidth(0.6f).height(4.dp).background(f.accent))
         }
     }
 }
@@ -308,6 +325,64 @@ private fun GradientSlider(value: Float, brush: Brush, thumb: Color, onChange: (
                 .clip(CircleShape)
                 .background(thumb)
                 .border(3.dp, Color.White, CircleShape)
+        )
+    }
+}
+
+/** Miniatura seleccionable de fondo. */
+@Composable
+private fun WallpaperTile(
+    label: String,
+    choice: Int,
+    selected: Int,
+    onSelect: (Int) -> Unit,
+    modifier: Modifier,
+    cover: Any?,
+) {
+    val shape = RoundedCornerShape(14.dp)
+    val isSel = selected == choice
+    Column(modifier, horizontalAlignment = Alignment.CenterHorizontally) {
+        Box(
+            Modifier
+                .fillMaxWidth()
+                .height(92.dp)
+                .pressClick({ onSelect(choice) }, pressedScale = 0.97f)
+                .clip(shape)
+                .border(if (isSel) 2.dp else 1.dp, if (isSel) Frost.TextPrimary else Frost.Outline, shape),
+        ) {
+            when (choice) {
+                WallpaperChoice.SILK -> Image(
+                    painterResource(R.drawable.wallpaper_seda), null,
+                    Modifier.fillMaxSize(), contentScale = ContentScale.Crop,
+                )
+                WallpaperChoice.MIST -> Image(
+                    painterResource(R.drawable.wallpaper_bruma), null,
+                    Modifier.fillMaxSize(), contentScale = ContentScale.Crop,
+                )
+                else -> {
+                    if (cover != null) {
+                        AsyncImage(
+                            model = cover, contentDescription = null,
+                            modifier = Modifier.fillMaxSize().blur(18.dp),
+                            contentScale = ContentScale.Crop,
+                        )
+                    } else {
+                        Box(Modifier.fillMaxSize().background(Frost.SurfaceHigh))
+                    }
+                }
+            }
+            if (isSel) {
+                Box(
+                    Modifier.align(Alignment.TopEnd).padding(6.dp).size(20.dp)
+                        .clip(CircleShape).background(Frost.AccentFill),
+                    contentAlignment = Alignment.Center,
+                ) { Icon(Icons.Rounded.Check, null, tint = Frost.OnAccent, modifier = Modifier.size(14.dp)) }
+            }
+        }
+        Spacer(Modifier.height(6.dp))
+        Text(
+            label, color = if (isSel) Frost.TextPrimary else Frost.TextSecondary,
+            fontSize = 12.sp, fontWeight = if (isSel) FontWeight.Medium else FontWeight.Normal,
         )
     }
 }

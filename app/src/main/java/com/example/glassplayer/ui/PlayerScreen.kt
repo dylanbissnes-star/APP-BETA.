@@ -39,6 +39,16 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.outlined.QueueMusic
+import androidx.compose.material.icons.outlined.Album
+import androidx.compose.material.icons.outlined.Explore
+import androidx.compose.material.icons.outlined.LibraryMusic
+import androidx.compose.material.icons.outlined.FavoriteBorder
+import androidx.compose.material.icons.outlined.Home
+import androidx.compose.material.icons.outlined.MusicNote
+import androidx.compose.material.icons.outlined.Person
+import androidx.compose.material.icons.outlined.Search
+import androidx.compose.material.icons.outlined.Settings
 import androidx.compose.material.icons.automirrored.rounded.QueueMusic
 import androidx.compose.material.icons.rounded.Album
 import androidx.compose.material.icons.rounded.Explore
@@ -103,7 +113,6 @@ import com.example.glassplayer.ui.components.DrawerEntry
 import com.example.glassplayer.ui.components.LyricsPanel
 import com.example.glassplayer.ui.components.MiniPlayer
 import com.example.glassplayer.ui.components.NowPlayingInfo
-import com.example.glassplayer.ui.components.PageBackground
 import com.example.glassplayer.ui.components.PlayerControls
 import com.example.glassplayer.ui.components.PlainIconButton
 import com.example.glassplayer.ui.components.RoundButton
@@ -111,7 +120,11 @@ import com.example.glassplayer.ui.components.TabBarHeight
 import com.example.glassplayer.ui.components.TabItem
 import com.example.glassplayer.ui.components.card
 import com.example.glassplayer.ui.components.pressClick
-import com.example.glassplayer.ui.components.gridBackdrop
+import com.example.glassplayer.ui.components.LocalGlass
+import com.example.glassplayer.ui.components.Wallpaper
+import com.example.glassplayer.ui.components.glassPanel
+import com.example.glassplayer.ui.components.glassSource
+import com.example.glassplayer.ui.components.rememberGlassState
 import com.example.glassplayer.ui.theme.Frost
 import com.example.glassplayer.ui.theme.LocalFrost
 import com.example.glassplayer.ui.theme.frostFor
@@ -131,11 +144,11 @@ private sealed interface Detail {
 private data class View(val screen: Screen, val detail: Detail?)
 
 private val tabs = listOf(
-    TabItem(Icons.Rounded.Home, "Inicio"),
-    TabItem(Icons.Rounded.Explore, "Explorar"),
-    TabItem(Icons.Rounded.Favorite, "Favoritos"),
-    TabItem(Icons.Rounded.LibraryMusic, "Biblioteca"),
-    TabItem(Icons.Rounded.Search, "Buscar"),
+    TabItem(Icons.Outlined.Home, "Inicio"),
+    TabItem(Icons.Outlined.Explore, "Explorar"),
+    TabItem(Icons.Outlined.FavoriteBorder, "Favoritos"),
+    TabItem(Icons.Outlined.LibraryMusic, "Biblioteca"),
+    TabItem(Icons.Outlined.Search, "Buscar"),
 )
 
 @Composable
@@ -150,19 +163,18 @@ fun PlayerScreen(vm: PlayerViewModel) {
 
     // Modo oscuro (por defecto) o claro; se recuerda entre sesiones
     var dark by rememberSaveable { mutableStateOf(SettingsStore.dark(context)) }
-    // Color de acento elegido por la persona (Ajustes) y si el reproductor se pinta con el
+    // Color de acento elegido por la persona y fondo elegido (Ajustes)
     var accentArgb by rememberSaveable { mutableStateOf(SettingsStore.accent(context)) }
-    var playerAccentBg by rememberSaveable { mutableStateOf(SettingsStore.playerAccentBg(context)) }
+    var wallpaper by rememberSaveable { mutableStateOf(SettingsStore.wallpaper(context)) }
     val accentColor = Color(accentArgb)
     val frost = frostFor(dark, accentColor)
-    // Con «estilo del tema» el reproductor usa el mismo fondo que la app; si no, queda oscuro sobre la portada desenfocada
-    val playerFrost = if (playerAccentBg) frost else frostFor(true, accentColor)
+    val glass = rememberGlassState()
 
     val drawerState = rememberDrawerState(DrawerValue.Closed)
     val scope = rememberCoroutineScope()
 
     // Iconos de la barra de estado/navegacion legibles segun el fondo
-    val onDark = if (screen == Screen.Player) playerFrost.onDark else frost.onDark
+    val onDark = frost.onDark
     val view = LocalView.current
     SideEffect {
         val window = (view.context as? Activity)?.window ?: return@SideEffect
@@ -194,27 +206,28 @@ fun PlayerScreen(vm: PlayerViewModel) {
         if (detail != null) detail = null else screen = Screen.Home
     }
 
-    CompositionLocalProvider(LocalFrost provides frost) {
+    CompositionLocalProvider(LocalFrost provides frost, LocalGlass provides glass) {
         ModalNavigationDrawer(
             drawerState = drawerState,
             gesturesEnabled = screen != Screen.Player,
             drawerContent = {
                 AppDrawerContent(
                     menu = listOf(
-                        DrawerEntry(Icons.Rounded.Home, "Inicio", screen == Screen.Home) { go(Screen.Home); closeDrawer() },
-                        DrawerEntry(Icons.Rounded.Search, "Buscar", screen == Screen.Search) { go(Screen.Search); closeDrawer() },
-                        DrawerEntry(Icons.Rounded.Favorite, "Favoritos", screen == Screen.Favorites) { go(Screen.Favorites); closeDrawer() },
-                        DrawerEntry(Icons.AutoMirrored.Rounded.QueueMusic, "Cola", screen == Screen.Queue) { go(Screen.Queue); closeDrawer() },
-                        DrawerEntry(Icons.Rounded.Settings, "Ajustes", screen == Screen.Settings) { go(Screen.Settings); closeDrawer() },
+                        DrawerEntry(Icons.Outlined.Home, "Inicio", screen == Screen.Home) { go(Screen.Home); closeDrawer() },
+                        DrawerEntry(Icons.Outlined.Search, "Buscar", screen == Screen.Search) { go(Screen.Search); closeDrawer() },
+                        DrawerEntry(Icons.Outlined.FavoriteBorder, "Favoritos", screen == Screen.Favorites) { go(Screen.Favorites); closeDrawer() },
+                        DrawerEntry(Icons.AutoMirrored.Outlined.QueueMusic, "Cola", screen == Screen.Queue, badge = state.queuedCount > 0) {
+                            go(Screen.Queue); closeDrawer()
+                        },
                     ),
                     library = listOf(
-                        DrawerEntry(Icons.Rounded.Album, "Álbumes", screen == Screen.Explore && exploreTab == 1) {
+                        DrawerEntry(Icons.Outlined.Album, "Álbumes", screen == Screen.Explore && exploreTab == 1) {
                             exploreTab = 1; go(Screen.Explore); closeDrawer()
                         },
-                        DrawerEntry(Icons.Rounded.MusicNote, "Canciones", screen == Screen.Library) {
+                        DrawerEntry(Icons.Outlined.MusicNote, "Canciones", screen == Screen.Library) {
                             vm.selectSource(SOURCE_ALL); go(Screen.Library); closeDrawer()
                         },
-                        DrawerEntry(Icons.Rounded.Person, "Artistas", screen == Screen.Explore && exploreTab == 0) {
+                        DrawerEntry(Icons.Outlined.Person, "Artistas", screen == Screen.Explore && exploreTab == 0) {
                             exploreTab = 0; go(Screen.Explore); closeDrawer()
                         },
                     ),
@@ -229,23 +242,20 @@ fun PlayerScreen(vm: PlayerViewModel) {
                         folderPicker.launch(null)
                         closeDrawer()
                     },
+                    settings = DrawerEntry(Icons.Outlined.Settings, "Ajustes", screen == Screen.Settings) { go(Screen.Settings); closeDrawer() },
+                    songCount = state.library.size,
+                    onOpenAccount = {
+                        vm.selectSource(SOURCE_ALL)
+                        go(Screen.Library)
+                        closeDrawer()
+                    },
                 )
             },
         ) {
-            Box(
-                Modifier
-                    .fillMaxSize()
-                    .background(Frost.BgBrush)
-                    .then(if (frost.onDark) Modifier.gridBackdrop(Color.White.copy(alpha = 0.035f)) else Modifier)
-            ) {
-                // En el reproductor, la portada de la cancion se ve de fondo, muy desenfocada
-                AnimatedVisibility(
-                    visible = screen == Screen.Player && detail == null && !playerAccentBg,
-                    enter = fadeIn(tween(500)),
-                    exit = fadeOut(tween(300)),
-                ) {
-                    PageBackground(dark = true, art = art, showArt = art != null)
-                }
+            Box(Modifier.fillMaxSize()) {
+                // Todo lo que hay debajo de los paneles de cristal (fondo + pantallas)
+                Box(Modifier.fillMaxSize().glassSource(glass)) {
+                Wallpaper(choice = wallpaper, art = art)
 
                 val showTopBar = screen != Screen.Player && detail == null
 
@@ -374,16 +384,13 @@ fun PlayerScreen(vm: PlayerViewModel) {
                                 onRemove = vm::removeFromQueue,
                                 onClearQueued = vm::clearQueued,
                             )
-                            // El reproductor siempre se dibuja oscuro, sobre la portada desenfocada
-                            Screen.Player -> CompositionLocalProvider(LocalFrost provides playerFrost) {
-                                PlayerContent(
-                                    state = state,
-                                    lyrics = lyricsState,
-                                    vm = vm,
-                                    onBack = { go(Screen.Home) },
-                                    onOpenQueue = { go(Screen.Queue) },
-                                )
-                            }
+                            Screen.Player -> PlayerContent(
+                                state = state,
+                                lyrics = lyricsState,
+                                vm = vm,
+                                onBack = { go(Screen.Home) },
+                                onOpenQueue = { go(Screen.Queue) },
+                            )
                             Screen.Settings -> SettingsScreen(
                                 accent = accentColor,
                                 onAccent = {
@@ -395,18 +402,21 @@ fun PlayerScreen(vm: PlayerViewModel) {
                                     dark = it
                                     SettingsStore.saveDark(context, it)
                                 },
-                                playerAccentBg = playerAccentBg,
-                                onPlayerAccentBg = {
-                                    playerAccentBg = it
-                                    SettingsStore.savePlayerAccentBg(context, it)
+                                wallpaper = wallpaper,
+                                onWallpaper = {
+                                    wallpaper = it
+                                    SettingsStore.saveWallpaper(context, it)
                                 },
+                                cover = art,
                                 onClearLyrics = vm::clearLyricsCache,
                             )
                         }
                     }
                 }
 
-                // Mini reproductor sobre la barra de pestanas
+                }
+
+                // Mini reproductor sobre la barra de pestanas (paneles de cristal sobre el contenido)
                 Column(Modifier.align(Alignment.BottomCenter)) {
                     AnimatedVisibility(
                         visible = screen != Screen.Player && state.current != null,
@@ -449,9 +459,7 @@ fun PlayerScreen(vm: PlayerViewModel) {
                             .align(Alignment.BottomCenter)
                             .navigationBarsPadding()
                             .padding(start = 24.dp, end = 24.dp, bottom = TabBarHeight + 80.dp)
-                            .shadow(12.dp, pill, ambientColor = Frost.Tint, spotColor = Frost.Tint)
-                            .clip(pill)
-                            .background(Frost.Floating)
+                            .glassPanel(pill)
                             .padding(horizontal = 20.dp, vertical = 12.dp)
                     ) {
                         Text(
@@ -468,61 +476,39 @@ fun PlayerScreen(vm: PlayerViewModel) {
     }
 }
 
-/** Saludo segun la hora del dia. */
-private fun greeting(): String {
-    val hour = java.time.LocalTime.now().hour
-    return when {
-        hour < 12 -> "Buenos días"
-        hour < 19 -> "Buenas tardes"
-        else -> "Buenas noches"
-    }
-}
-
 /**
- * Barra superior (como la referencia neon): saludo y nombre de la app a la izquierda; a la derecha
- * ajustes, interruptor claro/oscuro (siempre visible) y el boton de menu relleno con el acento.
+ * Barra superior: boton de menu (cristal), logo y nombre de la app, y a la derecha ajustes y el
+ * interruptor claro/oscuro, siempre visible.
  */
 @Composable
 private fun TopBar(dark: Boolean, onMenu: () -> Unit, onSettings: () -> Unit, onToggleDark: () -> Unit) {
-    val hello = remember { greeting() }
     Row(
         Modifier
             .statusBarsPadding()
             .fillMaxWidth()
-            .padding(start = 20.dp, end = 20.dp, top = 10.dp, bottom = 6.dp),
+            .padding(start = 16.dp, end = 16.dp, top = 10.dp, bottom = 8.dp),
         verticalAlignment = Alignment.CenterVertically,
     ) {
+        RoundButton(Icons.Rounded.Menu, "Menú", onMenu, size = 42.dp)
+        Spacer(Modifier.width(12.dp))
         Image(
             painter = painterResource(R.drawable.logo_mark),
             contentDescription = null,
-            modifier = Modifier.size(30.dp),
-            colorFilter = ColorFilter.tint(Frost.Accent),
+            modifier = Modifier.size(24.dp),
+            colorFilter = ColorFilter.tint(Frost.TextPrimary),
         )
-        Spacer(Modifier.width(10.dp))
-        Column(Modifier.weight(1f)) {
-            Text(hello, color = Frost.TextSecondary, fontSize = 12.sp, maxLines = 1)
-            Text(
-                "@" + stringResource(R.string.app_name).uppercase(),
-                color = Frost.TextPrimary,
-                fontSize = 14.sp,
-                fontWeight = FontWeight.Bold,
-                maxLines = 1,
-            )
-        }
+        Spacer(Modifier.width(8.dp))
+        Text(
+            stringResource(R.string.app_name),
+            modifier = Modifier.weight(1f),
+            color = Frost.TextPrimary,
+            fontSize = 16.sp,
+            fontWeight = FontWeight.Medium,
+            maxLines = 1,
+        )
         PlainIconButton(Icons.Rounded.Settings, "Ajustes", onSettings, size = 38.dp, iconSize = 22.dp, tint = Frost.TextSecondary)
         Spacer(Modifier.width(2.dp))
         DarkModeToggle(dark = dark, onToggle = onToggleDark)
-        Spacer(Modifier.width(10.dp))
-        Box(
-            Modifier
-                .size(44.dp)
-                .pressClick(onMenu, pressedScale = 0.92f)
-                .clip(RoundedCornerShape(12.dp))
-                .background(Frost.AccentFill),
-            contentAlignment = Alignment.Center,
-        ) {
-            Icon(Icons.Rounded.Menu, "Menú", tint = Frost.OnAccent, modifier = Modifier.size(24.dp))
-        }
     }
 }
 

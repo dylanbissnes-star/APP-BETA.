@@ -21,7 +21,9 @@ import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.Dp
@@ -30,7 +32,7 @@ import androidx.compose.ui.unit.sp
 import com.example.glassplayer.ui.theme.Frost
 
 /**
- * Boton redondo oscuro con contorno fino (como los de la cabecera de la referencia: volver, mas...).
+ * Boton redondo de cristal con borde fino iluminado en una esquina.
  * `active` lo tine con el acento; `badge` muestra un contador.
  */
 @Composable
@@ -57,7 +59,7 @@ fun RoundButton(
                 .pressClick(onClick)
                 .clip(CircleShape)
                 .background(fill)
-                .border(1.dp, edge, CircleShape),
+                .border(1.dp, if (active) SolidColor(edge) else Brush.linearGradient(listOf(Frost.EdgeLight, Frost.EdgeDark)), CircleShape),
             contentAlignment = Alignment.Center,
         ) {
             Crossfade(targetState = icon, animationSpec = tween(220), label = "rbIcon") { current ->
@@ -129,7 +131,7 @@ fun ActionPill(
     accent: Boolean = false,
     iconTint: Color? = null,
 ) {
-    val shape = RoundedCornerShape(14.dp)
+    val shape = RoundedCornerShape(12.dp)
     val filled = primary || accent
     val fg = if (filled) Frost.OnAccent else Frost.TextPrimary
     val fill = if (filled) Frost.AccentFill else Frost.SurfaceHigh
@@ -138,7 +140,7 @@ fun ActionPill(
             .pressClick(onClick, pressedScale = 0.95f)
             .clip(shape)
             .background(fill)
-            .then(if (filled) Modifier else Modifier.border(1.dp, Frost.Outline, shape))
+            .then(if (filled) Modifier else Modifier.border(1.dp, Brush.linearGradient(listOf(Frost.EdgeLight, Frost.EdgeDark)), shape))
             .padding(horizontal = 18.dp, vertical = 10.dp),
         verticalAlignment = Alignment.CenterVertically,
     ) {
