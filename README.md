@@ -68,3 +68,7 @@ app/src/main/java/com/example/glassplayer/
 ## Tipografías
 
 Poppins (texto) y Mr De Haviland (titulares cursivos), ambas con licencia SIL OFL (Google Fonts), en `app/src/main/res/font`.
+
+
+## Estilo Glass
+Fondo de seda oscura, paneles de vidrio translúcido con contorno degradado, menú lateral tipo «MENU» (marca roja de selección, puntito de aviso, separadores finos, fila de perfil), botones píldora blancos y píldora con brillo. El color de acento (Ajustes) marca indicadores, puntos y brillos.

@@ -40,6 +40,14 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.rounded.QueueMusic
+import androidx.compose.material.icons.outlined.Album
+import androidx.compose.material.icons.outlined.FavoriteBorder
+import androidx.compose.material.icons.outlined.Home
+import androidx.compose.material.icons.outlined.MusicNote
+import androidx.compose.material.icons.outlined.Person
+import androidx.compose.material.icons.outlined.Search
+import androidx.compose.material.icons.outlined.Settings
+import androidx.compose.material.icons.automirrored.outlined.QueueMusic
 import androidx.compose.material.icons.rounded.Album
 import androidx.compose.material.icons.rounded.Explore
 import androidx.compose.material.icons.rounded.Favorite
@@ -103,6 +111,7 @@ import com.example.glassplayer.ui.components.DrawerEntry
 import com.example.glassplayer.ui.components.LyricsPanel
 import com.example.glassplayer.ui.components.MiniPlayer
 import com.example.glassplayer.ui.components.NowPlayingInfo
+import com.example.glassplayer.ui.components.GlassBackdrop
 import com.example.glassplayer.ui.components.PageBackground
 import com.example.glassplayer.ui.components.PlayerControls
 import com.example.glassplayer.ui.components.PlainIconButton
@@ -201,20 +210,24 @@ fun PlayerScreen(vm: PlayerViewModel) {
             drawerContent = {
                 AppDrawerContent(
                     menu = listOf(
-                        DrawerEntry(Icons.Rounded.Home, "Inicio", screen == Screen.Home) { go(Screen.Home); closeDrawer() },
-                        DrawerEntry(Icons.Rounded.Search, "Buscar", screen == Screen.Search) { go(Screen.Search); closeDrawer() },
-                        DrawerEntry(Icons.Rounded.Favorite, "Favoritos", screen == Screen.Favorites) { go(Screen.Favorites); closeDrawer() },
-                        DrawerEntry(Icons.AutoMirrored.Rounded.QueueMusic, "Cola", screen == Screen.Queue) { go(Screen.Queue); closeDrawer() },
-                        DrawerEntry(Icons.Rounded.Settings, "Ajustes", screen == Screen.Settings) { go(Screen.Settings); closeDrawer() },
+                        DrawerEntry(Icons.Outlined.Home, "Inicio", screen == Screen.Home) { go(Screen.Home); closeDrawer() },
+                        DrawerEntry(Icons.Outlined.Search, "Buscar", screen == Screen.Search) { go(Screen.Search); closeDrawer() },
+                        DrawerEntry(Icons.Outlined.FavoriteBorder, "Favoritos", screen == Screen.Favorites) { go(Screen.Favorites); closeDrawer() },
+                        DrawerEntry(
+                            Icons.AutoMirrored.Outlined.QueueMusic, "Cola", screen == Screen.Queue,
+                            onClick = { go(Screen.Queue); closeDrawer() },
+                            dot = state.queuedCount > 0,
+                        ),
+                        DrawerEntry(Icons.Outlined.Settings, "Ajustes", screen == Screen.Settings) { go(Screen.Settings); closeDrawer() },
                     ),
                     library = listOf(
-                        DrawerEntry(Icons.Rounded.Album, "Álbumes", screen == Screen.Explore && exploreTab == 1) {
+                        DrawerEntry(Icons.Outlined.Album, "Álbumes", screen == Screen.Explore && exploreTab == 1) {
                             exploreTab = 1; go(Screen.Explore); closeDrawer()
                         },
-                        DrawerEntry(Icons.Rounded.MusicNote, "Canciones", screen == Screen.Library) {
+                        DrawerEntry(Icons.Outlined.MusicNote, "Canciones", screen == Screen.Library) {
                             vm.selectSource(SOURCE_ALL); go(Screen.Library); closeDrawer()
                         },
-                        DrawerEntry(Icons.Rounded.Person, "Artistas", screen == Screen.Explore && exploreTab == 0) {
+                        DrawerEntry(Icons.Outlined.Person, "Artistas", screen == Screen.Explore && exploreTab == 0) {
                             exploreTab = 0; go(Screen.Explore); closeDrawer()
                         },
                     ),
@@ -235,9 +248,8 @@ fun PlayerScreen(vm: PlayerViewModel) {
             Box(
                 Modifier
                     .fillMaxSize()
-                    .background(Frost.BgBrush)
-                    .then(if (frost.onDark) Modifier.gridBackdrop(Color.White.copy(alpha = 0.035f)) else Modifier)
             ) {
+                GlassBackdrop(dark = dark)
                 // En el reproductor, la portada de la cancion se ve de fondo, muy desenfocada
                 AnimatedVisibility(
                     visible = screen == Screen.Player && detail == null && !playerAccentBg,

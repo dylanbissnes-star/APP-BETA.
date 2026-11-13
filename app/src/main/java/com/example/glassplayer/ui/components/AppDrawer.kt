@@ -2,6 +2,15 @@ package com.example.glassplayer.ui.components
 
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.WindowInsets
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.navigationBarsPadding
+import androidx.compose.foundation.layout.statusBarsPadding
+import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.ui.graphics.Brush
+import androidx.compose.ui.graphics.RectangleShape
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -14,9 +23,9 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.rounded.CreateNewFolder
-import androidx.compose.material.icons.rounded.DeleteOutline
-import androidx.compose.material.icons.rounded.Folder
+import androidx.compose.material.icons.outlined.CreateNewFolder
+import androidx.compose.material.icons.outlined.DeleteOutline
+import androidx.compose.material.icons.outlined.FolderOpen
 import androidx.compose.material3.Icon
 import androidx.compose.material3.ModalDrawerSheet
 import androidx.compose.material3.Text
@@ -45,12 +54,16 @@ data class DrawerEntry(
     val icon: ImageVector,
     val label: String,
     val selected: Boolean,
+    /** Puntito rojo de aviso (p. ej. canciones en la cola). */
+    val dot: Boolean = false,
     val onClick: () -> Unit,
 )
 
 /**
- * Menu lateral (la barra lateral de la referencia de escritorio, adaptada al movil):
- * logo, MENU, BIBLIOTECA y CARPETAS (con papelera para quitarlas y «Agregar carpeta»).
+ * Menu lateral como la tarjeta "MENU" de la referencia: vidrio oscuro redondeado, iconos de linea
+ * fina, marca de seleccion en el borde izquierdo con el color de acento, puntito de aviso,
+ * separadores finos y la fila de perfil abajo. Incluye BIBLIOTECA y CARPETAS (con papelera para
+ * quitarlas y «Agregar carpeta»).
  */
 @Composable
 fun AppDrawerContent(
@@ -61,70 +74,119 @@ fun AppDrawerContent(
     onRemoveFolder: (Folder) -> Unit,
     onAddFolder: () -> Unit,
 ) {
+    val shape = RoundedCornerShape(28.dp)
     ModalDrawerSheet(
-        drawerShape = RoundedCornerShape(topEnd = 28.dp, bottomEnd = 28.dp),
-        drawerContainerColor = Frost.Floating,
+        drawerShape = RectangleShape,
+        drawerContainerColor = Color.Transparent,
         drawerContentColor = Frost.TextPrimary,
+        drawerTonalElevation = 0.dp,
+        windowInsets = WindowInsets(0, 0, 0, 0),
     ) {
         Column(
             Modifier
-                .verticalScroll(rememberScrollState())
-                .padding(horizontal = 14.dp, vertical = 16.dp),
+                .fillMaxSize()
+                .statusBarsPadding()
+                .navigationBarsPadding()
+                .padding(start = 12.dp, end = 12.dp, top = 12.dp, bottom = 12.dp)
+                .clip(shape)
+                .background(Frost.Floating)
+                .border(
+                    1.dp,
+                    Brush.verticalGradient(
+                        if (Frost.OnDark) listOf(Color.White.copy(alpha = 0.28f), Color.White.copy(alpha = 0.06f))
+                        else listOf(Color.White, Color.White.copy(alpha = 0.4f))
+                    ),
+                    shape,
+                ),
         ) {
+            Column(
+                Modifier
+                    .weight(1f)
+                    .verticalScroll(rememberScrollState())
+                    .padding(top = 20.dp, bottom = 8.dp),
+            ) {
+                DrawerSection("MENU")
+                menu.forEachIndexed { i, e ->
+                    if (i > 0) Hairline()
+                    DrawerItem(e.icon, e.label, e.selected, e.dot, e.onClick)
+                }
+
+                DrawerSection("BIBLIOTECA")
+                library.forEachIndexed { i, e ->
+                    if (i > 0) Hairline()
+                    DrawerItem(e.icon, e.label, e.selected, e.dot, e.onClick)
+                }
+
+                DrawerSection("CARPETAS")
+                folders.forEach { folder ->
+                    Hairline()
+                    Row(
+                        Modifier
+                            .fillMaxWidth()
+                            .pressClick({ onOpenFolder(folder) }, pressedScale = 0.99f)
+                            .padding(start = 22.dp, end = 10.dp),
+                        verticalAlignment = Alignment.CenterVertically,
+                    ) {
+                        Icon(Icons.Outlined.FolderOpen, null, tint = Frost.TextSecondary, modifier = Modifier.size(20.dp))
+                        Text(
+                            folder.name,
+                            color = Frost.TextPrimary,
+                            fontSize = 15.sp,
+                            maxLines = 1,
+                            overflow = TextOverflow.Ellipsis,
+                            modifier = Modifier
+                                .weight(1f)
+                                .padding(horizontal = 16.dp, vertical = 15.dp),
+                        )
+                        PlainIconButton(
+                            Icons.Outlined.DeleteOutline, "Quitar carpeta", { onRemoveFolder(folder) },
+                            size = 38.dp, iconSize = 19.dp, tint = Frost.TextTertiary,
+                        )
+                    }
+                }
+                Hairline()
+                DrawerItem(Icons.Outlined.CreateNewFolder, "Agregar carpeta", false, false, onAddFolder)
+            }
+
+            // Fila de perfil, abajo
+            Hairline()
             Row(
-                Modifier.padding(start = 8.dp, bottom = 8.dp),
+                Modifier.fillMaxWidth().padding(horizontal = 20.dp, vertical = 16.dp),
                 verticalAlignment = Alignment.CenterVertically,
             ) {
-                Image(
-                    painterResource(R.drawable.logo_mark), null, Modifier.size(34.dp),
-                    colorFilter = ColorFilter.tint(Frost.TextPrimary),
-                )
-                Spacer(Modifier.width(10.dp))
-                Text(
-                    stringResource(R.string.app_name),
-                    color = Frost.TextPrimary,
-                    fontSize = 19.sp,
-                    fontWeight = FontWeight.Bold,
-                )
-            }
-
-            DrawerSection("MENÚ")
-            menu.forEach { DrawerItem(it.icon, it.label, it.selected, it.onClick) }
-
-            DrawerSection("BIBLIOTECA")
-            library.forEach { DrawerItem(it.icon, it.label, it.selected, it.onClick) }
-
-            DrawerSection("CARPETAS")
-            folders.forEach { folder ->
-                Row(
+                Box(
                     Modifier
-                        .fillMaxWidth()
-                        .clip(RoundedCornerShape(14.dp))
-                        .pressClick({ onOpenFolder(folder) }, pressedScale = 0.98f)
-                        .padding(start = 12.dp, top = 2.dp, bottom = 2.dp),
-                    verticalAlignment = Alignment.CenterVertically,
+                        .size(40.dp)
+                        .clip(CircleShape)
+                        .background(Color.White.copy(alpha = if (Frost.OnDark) 0.12f else 0.9f)),
+                    contentAlignment = Alignment.Center,
                 ) {
-                    Icon(Icons.Rounded.Folder, null, tint = Frost.TextSecondary, modifier = Modifier.size(20.dp))
-                    Text(
-                        folder.name,
-                        color = Frost.TextPrimary,
-                        fontSize = 15.sp,
-                        maxLines = 1,
-                        overflow = TextOverflow.Ellipsis,
-                        modifier = Modifier
-                            .weight(1f)
-                            .padding(horizontal = 14.dp, vertical = 10.dp),
-                    )
-                    PlainIconButton(
-                        Icons.Rounded.DeleteOutline, "Quitar carpeta", { onRemoveFolder(folder) },
-                        size = 38.dp, iconSize = 20.dp, tint = Frost.TextTertiary,
+                    Image(
+                        painterResource(R.drawable.logo_mark), null, Modifier.size(24.dp),
+                        colorFilter = ColorFilter.tint(if (Frost.OnDark) Color.White else Color(0xFF16161A)),
                     )
                 }
+                Column(Modifier.weight(1f).padding(start = 12.dp)) {
+                    Text(
+                        stringResource(R.string.app_name),
+                        color = Frost.TextPrimary, fontSize = 14.sp, fontWeight = FontWeight.SemiBold,
+                    )
+                    Text("Reproductor local", color = Frost.TextTertiary, fontSize = 12.sp)
+                }
             }
-            DrawerItem(Icons.Rounded.CreateNewFolder, "Agregar carpeta", false, onAddFolder)
-            Spacer(Modifier.height(8.dp))
         }
     }
+}
+
+@Composable
+private fun Hairline() {
+    Box(
+        Modifier
+            .fillMaxWidth()
+            .padding(horizontal = 20.dp)
+            .height(1.dp)
+            .background(Frost.Outline.copy(alpha = 0.10f)),
+    )
 }
 
 @Composable
@@ -133,42 +195,44 @@ private fun DrawerSection(title: String) {
         title,
         color = Frost.TextTertiary,
         fontSize = 11.sp,
-        fontWeight = FontWeight.SemiBold,
-        letterSpacing = 1.sp,
-        modifier = Modifier.padding(start = 12.dp, top = 18.dp, bottom = 6.dp),
+        fontWeight = FontWeight.Medium,
+        letterSpacing = 1.6.sp,
+        modifier = Modifier.padding(start = 22.dp, top = 14.dp, bottom = 10.dp),
     )
 }
 
 @Composable
-private fun DrawerItem(icon: ImageVector, label: String, selected: Boolean, onClick: () -> Unit) {
+private fun DrawerItem(icon: ImageVector, label: String, selected: Boolean, dot: Boolean, onClick: () -> Unit) {
     val accent = Frost.Accent
     Row(
         Modifier
             .fillMaxWidth()
-            .clip(RoundedCornerShape(14.dp))
-            .pressClick(onClick, pressedScale = 0.98f)
-            .background(if (selected) accent.copy(alpha = 0.14f) else Color.Transparent)
+            .pressClick(onClick, pressedScale = 0.99f)
+            .background(if (selected) Frost.TextPrimary.copy(alpha = 0.05f) else Color.Transparent)
             .drawBehind {
                 if (selected) {
-                    // Marca de seleccion a la izquierda (la barrita verde de la referencia)
+                    // Marca de seleccion pegada al borde izquierdo (la barra roja de la referencia)
                     drawRoundRect(
                         color = accent,
-                        topLeft = Offset(0f, size.height * 0.26f),
-                        size = Size(3.dp.toPx(), size.height * 0.48f),
+                        topLeft = Offset(0f, size.height * 0.18f),
+                        size = Size(3.dp.toPx(), size.height * 0.64f),
                         cornerRadius = CornerRadius(2.dp.toPx()),
                     )
                 }
             }
-            .padding(horizontal = 12.dp, vertical = 12.dp),
+            .padding(start = 22.dp, end = 20.dp, top = 15.dp, bottom = 15.dp),
         verticalAlignment = Alignment.CenterVertically,
     ) {
-        Icon(icon, null, tint = if (selected) accent else Frost.TextSecondary, modifier = Modifier.size(20.dp))
+        Icon(icon, null, tint = if (selected) Frost.TextPrimary else Frost.TextSecondary, modifier = Modifier.size(20.dp))
         Text(
             label,
             color = if (selected) Frost.TextPrimary else Frost.TextSecondary,
             fontSize = 15.sp,
-            fontWeight = if (selected) FontWeight.SemiBold else FontWeight.Medium,
-            modifier = Modifier.padding(start = 14.dp),
+            fontWeight = if (selected) FontWeight.Medium else FontWeight.Normal,
+            modifier = Modifier.weight(1f).padding(start = 16.dp),
         )
+        if (dot) {
+            Box(Modifier.size(8.dp).clip(CircleShape).background(accent))
+        }
     }
 }

@@ -3,6 +3,7 @@ package com.example.glassplayer.ui.components
 import androidx.compose.animation.Crossfade
 import androidx.compose.animation.animateColorAsState
 import androidx.compose.animation.core.tween
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
@@ -14,6 +15,8 @@ import androidx.compose.ui.draw.blur
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.painterResource
+import com.example.glassplayer.R
 import androidx.compose.ui.unit.dp
 import coil.compose.AsyncImage
 import coil.request.ImageRequest
@@ -61,5 +64,25 @@ fun PageBackground(
                 }
             }
         }
+    }
+}
+
+/**
+ * Fondo base de toda la app: una imagen oscura de seda (como el fondo fotografico de la referencia)
+ * con un velo. En modo claro el velo es blanco y el fondo queda como cristal esmerilado claro.
+ */
+@Composable
+fun GlassBackdrop(dark: Boolean, modifier: Modifier = Modifier) {
+    Box(modifier.fillMaxSize().background(if (dark) Color(0xFF0B0B0D) else Color(0xFFE9E9EE))) {
+        Image(
+            painterResource(R.drawable.bg_glass), null,
+            contentScale = ContentScale.Crop,
+            modifier = Modifier.fillMaxSize(),
+        )
+        Box(
+            Modifier.fillMaxSize().background(
+                if (dark) Color.Black.copy(alpha = 0.10f) else Color.White.copy(alpha = 0.82f)
+            )
+        )
     }
 }
