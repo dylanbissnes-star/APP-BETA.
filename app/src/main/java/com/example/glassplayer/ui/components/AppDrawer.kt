@@ -54,9 +54,9 @@ data class DrawerEntry(
     val icon: ImageVector,
     val label: String,
     val selected: Boolean,
-    val onClick: () -> Unit,
     /** Puntito rojo de aviso (p. ej. canciones en la cola). */
     val dot: Boolean = false,
+    val onClick: () -> Unit,
 )
 
 /**
